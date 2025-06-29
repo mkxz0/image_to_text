@@ -1,14 +1,38 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar">
 <head>
   <meta charset="UTF-8">
-  <title>AI Chat</title>
+  <title>صفحة دردشة Gemini</title>
+  <style>
+    body {
+      font-family: Arial;
+      padding: 20px;
+      direction: rtl;
+      background: #f4f4f4;
+    }
+    #response {
+      white-space: pre-wrap;
+      background: #fff;
+      padding: 10px;
+      margin-top: 10px;
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 5px 10px;
+      margin: 5px;
+    }
+    input {
+      width: 60%;
+      padding: 5px;
+    }
+  </style>
 </head>
 <body>
-  <h1>مرحبًا بك في صفحة شات Gemini</h1>
-  <input type="text" id="input">
+  <h2>شات مطور بالذكاء الاصطناعي (Gemini)</h2>
+  <input type="text" id="input" placeholder="اكتب أمرك هنا...">
   <button onclick="handleSend()">إرسال</button>
-  <pre id="response"></pre>
+  <div id="response"></div>
+
   <script src="app.js"></script>
 </body>
 </html>

@@ -1,38 +1,169 @@
+
 <!DOCTYPE html>
 <html lang="ar">
 <head>
   <meta charset="UTF-8">
-  <title>صفحة دردشة Gemini</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>مساعد Gemini</title>
   <style>
     body {
-      font-family: Arial;
-      padding: 20px;
+      margin: 0;
+      font-family: sans-serif;
+      background-color: #f9f9fb;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
       direction: rtl;
-      background: #f4f4f4;
     }
-    #response {
-      white-space: pre-wrap;
-      background: #fff;
+
+    header {
+      background-color: #4a90e2;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 18px;
+    }
+
+    #chat {
+      flex: 1;
       padding: 10px;
-      margin-top: 10px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .bubble {
+      max-width: 80%;
+      padding: 10px 14px;
+      margin: 6px 0;
+      border-radius: 12px;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+
+    .user {
+      align-self: flex-end;
+      background-color: #d1e7ff;
+    }
+
+    .bot {
+      align-self: flex-start;
+      background-color: #eeeeee;
+    }
+
+    #inputArea {
+      display: flex;
+      padding: 10px;
+      border-top: 1px solid #ccc;
+      background-color: white;
+    }
+
+    #input {
+      flex: 1;
+      padding: 10px;
       border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
     }
+
     button {
-      padding: 5px 10px;
-      margin: 5px;
+      margin-right: 8px;
+      padding: 10px 12px;
+      font-size: 16px;
+      border: none;
+      background-color: #4a90e2;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
     }
-    input {
-      width: 60%;
-      padding: 5px;
+
+    button:hover {
+      background-color: #357ac8;
     }
+
+    .action-btn {
+      margin: 4px;
+      background: #888;
+      font-size: 14px;
+    }
+
   </style>
 </head>
 <body>
-  <h2>شات مطور بالذكاء الاصطناعي (Gemini)</h2>
-  <input type="text" id="input" placeholder="اكتب أمرك هنا...">
-  <button onclick="handleSend()">إرسال</button>
-  <div id="response"></div>
 
-  <script src="app.js"></script>
+  <header>مساعد Gemini الذكي</header>
+
+  <div id="chat"></div>
+
+  <div id="inputArea">
+    <input type="text" id="input" placeholder="اكتب سؤالك أو أمرك هنا...">
+    <button onclick="sendMessage()">إرسال</button>
+  </div>
+
+  <script>
+    const API_KEY = "AIzaSyAFPE5Ztgq7byRBnCrfODzcaCKbhGEJhzQ";
+    const MODEL = "gemini-2.0-flash";
+
+    function appendMessage(text, sender = 'bot') {
+      const chat = document.getElementById("chat");
+      const bubble = document.createElement("div");
+      bubble.className = `bubble ${sender}`;
+      bubble.innerText = text;
+      chat.appendChild(bubble);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function sendMessage() {
+      const input = document.getElementById("input");
+      const text = input.value.trim();
+      if (!text) return;
+
+      appendMessage(text, 'user');
+      input.value = "";
+
+      if (text === "ابدأ من جديد") {
+        document.getElementById("chat").innerHTML = "";
+        return;
+      }
+
+      if (text === "حذف الكود المضاف") {
+        const scripts = document.querySelectorAll(".injected");
+        scripts.forEach(e => e.remove());
+        appendMessage("✅ تم حذف الكود المضاف.", "bot");
+        return;
+      }
+
+      fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text }] }]
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "❌ لم يتم الحصول على رد.";
+        appendMessage(reply, 'bot');
+
+        if (reply.includes("<") && reply.includes(">")) {
+          const btn = document.createElement("button");
+          btn.innerText = "✅ تطبيق الكود";
+          btn.className = "action-btn";
+          btn.onclick = () => {
+            const div = document.createElement("div");
+            div.className = "injected";
+            div.innerHTML = reply;
+            document.body.appendChild(div);
+          };
+          document.getElementById("chat").appendChild(btn);
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        appendMessage("⚠️ حدث خطأ في الاتصال.", 'bot');
+      });
+    }
+  </script>
+
 </body>
 </html>

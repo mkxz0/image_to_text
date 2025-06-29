@@ -1,4 +1,4 @@
-const API_KEY = "YOUR_API_KEY"; // ← حط مفتاحك هنا
+const API_KEY = "AIzaSyAFPE5Ztgq7byRBnCrfODzcaCKbhGEJhzQ"; // ← حط مفتاحك هنا
 
 async function handleSend() {
   const input = document.getElementById("input").value;

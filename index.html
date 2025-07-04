@@ -1,133 +1,105 @@
-
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>مساعد تطوير الصفحة الذكي</title>
+  <title>تحميل فيديوهات TikTok</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
-      background-color: #f4f7fa;
-      font-family: "Segoe UI", sans-serif;
-      margin: 0;
-      padding: 0;
+      font-family: 'Arial', sans-serif;
+      background-color: #f4f4f4;
       display: flex;
       flex-direction: column;
-      height: 100vh;
-      direction: rtl;
+      align-items: center;
+      padding: 20px;
     }
-    header {
-      background-color: #4a90e2;
-      color: white;
-      padding: 15px;
-      font-size: 18px;
-      text-align: center;
+
+    h1 {
+      color: #333;
     }
-    #chat {
-      flex: 1;
+
+    input {
       padding: 10px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-    }
-    .msg {
-      max-width: 75%;
-      margin: 5px;
-      padding: 10px;
-      border-radius: 10px;
-      line-height: 1.5;
-      white-space: pre-wrap;
-    }
-    .user { align-self: flex-end; background-color: #d1ecf1; }
-    .bot  { align-self: flex-start; background-color: #f0f0f0; }
-    #inputArea {
-      display: flex;
-      border-top: 1px solid #ccc;
-      padding: 10px;
-      background-color: #fff;
-    }
-    #input {
-      flex: 1;
-      padding: 10px;
-      font-size: 16px;
-      border-radius: 8px;
+      width: 100%;
+      max-width: 400px;
+      margin-top: 20px;
       border: 1px solid #ccc;
+      border-radius: 5px;
+      direction: ltr;
     }
+
     button {
-      margin-right: 10px;
-      padding: 10px 14px;
-      font-size: 16px;
-      background-color: #4a90e2;
+      padding: 10px 20px;
+      margin-top: 10px;
+      background-color: #0099ff;
       color: white;
       border: none;
-      border-radius: 8px;
+      border-radius: 5px;
       cursor: pointer;
     }
+
     button:hover {
-      background-color: #357ab8;
+      background-color: #007acc;
+    }
+
+    #result {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    video {
+      width: 100%;
+      max-width: 400px;
+      margin-top: 15px;
+      border-radius: 10px;
+    }
+
+    a {
+      display: inline-block;
+      margin-top: 10px;
+      color: #0099ff;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
-  <header>مساعد تطوير الصفحة الذكي</header>
-  <div id="chat"></div>
-  <div id="inputArea">
-    <input id="input" type="text" placeholder="اكتب طلب التعديل هنا..." />
-    <button onclick="sendToAI()">تنفيذ التعديل</button>
-  </div>
+  <h1>تحميل فيديوهات TikTok</h1>
+  <input type="text" id="videoUrl" placeholder="ضع رابط فيديو TikTok هنا" />
+  <button onclick="downloadVideo()">تحميل</button>
+  <div id="result"></div>
 
   <script>
-    const API_KEY = "AIzaSyAFPE5Ztgq7byRBnCrfODzcaCKbhGEJhzQ";
-    const MODEL = "gemini-2.0-flash";
+    async function downloadVideo() {
+      const url = document.getElementById("videoUrl").value.trim();
+      const resultDiv = document.getElementById("result");
 
-    function appendMsg(text, cls) {
-      const chat = document.getElementById("chat");
-      const msg = document.createElement("div");
-      msg.className = `msg ${cls}`;
-      msg.innerText = text;
-      chat.appendChild(msg);
-      chat.scrollTop = chat.scrollHeight;
-    }
+      if (!url) {
+        alert("يرجى وضع رابط الفيديو");
+        return;
+      }
 
-    function cleanCode(code) {
-      return code
-        .replace(/```(?:javascript)?/g, '')
-        .replace(/```/g, '')
-        .trim();
-    }
-
-    async function sendToAI() {
-      const input = document.getElementById("input");
-      const command = input.value.trim();
-      if (!command) return;
-      appendMsg(command, "user");
-      input.value = "";
-
-      const context = "أنت مساعد ذكي داخل صفحة ويب. عندما يطلب المستخدم تعديل الصفحة، أعد كود JavaScript دقيق فقط. لا تضف شرح أو تعليقات، فقط كود جاهز للتنفيذ.";
-      const fullPrompt = context + "\n\nطلب المستخدم: " + command;
+      resultDiv.innerHTML = "جارٍ التحميل...";
 
       try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] })
-        });
+        const apiURL = `https://tooly.chative.io/tiktok/video?url=${encodeURIComponent(url)}`;
+        const response = await fetch(apiURL);
+        const data = await response.json();
 
-        const data = await res.json();
-        let reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "❌ لم يتم الرد بكود.";
-        appendMsg(reply, "bot");
-
-        if (reply.includes("document") || reply.includes("createElement")) {
-          try {
-            const cleaned = cleanCode(reply);
-            eval(cleaned);
-            appendMsg("✅ تم تنفيذ التعديل بنجاح.", "bot");
-          } catch (e) {
-            appendMsg("⚠️ حدث خطأ أثناء التنفيذ: " + e.message, "bot");
-          }
+        if (data?.video_url) {
+          resultDiv.innerHTML = `
+            <video controls src="${data.video_url}"></video>
+            <br>
+            <a href="${data.video_url}" download>تحميل الفيديو</a>
+          `;
+        } else {
+          resultDiv.innerHTML = "فشل في جلب الفيديو أو الرابط غير صحيح.";
         }
-      } catch (err) {
-        appendMsg("❌ فشل الاتصال بـ Gemini", "bot");
+      } catch (error) {
+        resultDiv.innerHTML = "حدث خطأ أثناء الاتصال بالخدمة.";
       }
     }
   </script>

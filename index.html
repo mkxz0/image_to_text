@@ -1,107 +1,91 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>تحميل فيديوهات TikTok</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <title>Download TikTok Video - No Watermark</title>
   <style>
     body {
-      font-family: 'Arial', sans-serif;
-      background-color: #f4f4f4;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      text-align: center;
       padding: 20px;
+      background-color: #f5f5f5;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-
-    h1 {
-      color: #333;
-    }
-
-    input {
-      padding: 10px;
+    input, button {
       width: 100%;
-      max-width: 400px;
-      margin-top: 20px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      direction: ltr;
-    }
-
-    button {
-      padding: 10px 20px;
+      padding: 12px;
       margin-top: 10px;
-      background-color: #0099ff;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      background-color: #007bff;
       color: white;
-      border: none;
-      border-radius: 5px;
       cursor: pointer;
     }
-
     button:hover {
-      background-color: #007acc;
+      background-color: #0056b3;
     }
-
+    img {
+      margin-top: 20px;
+      max-width: 100%;
+      border-radius: 6px;
+    }
     #result {
       margin-top: 20px;
-      text-align: center;
-    }
-
-    video {
-      width: 100%;
-      max-width: 400px;
-      margin-top: 15px;
-      border-radius: 10px;
-    }
-
-    a {
-      display: inline-block;
-      margin-top: 10px;
-      color: #0099ff;
-      text-decoration: none;
-    }
-
-    a:hover {
-      text-decoration: underline;
     }
   </style>
 </head>
 <body>
-  <h1>تحميل فيديوهات TikTok</h1>
-  <input type="text" id="videoUrl" placeholder="ضع رابط فيديو TikTok هنا" />
-  <button onclick="downloadVideo()">تحميل</button>
+
+  <h2>🎬 TikTok Video Downloader</h2>
+  <p>Paste a TikTok video link below to download it without watermark</p>
+
+  <input type="text" id="videoUrl" placeholder="e.g. https://vt.tiktok.com/...">
+  <button onclick="downloadVideo()">Download Video</button>
+
   <div id="result"></div>
 
   <script>
     async function downloadVideo() {
       const url = document.getElementById("videoUrl").value.trim();
-      const resultDiv = document.getElementById("result");
+      const result = document.getElementById("result");
+      result.innerHTML = "⏳ Processing...";
 
       if (!url) {
-        alert("يرجى وضع رابط الفيديو");
+        result.innerHTML = "<p style='color:red;'>⚠️ Please enter a TikTok video URL.</p>";
         return;
       }
 
-      resultDiv.innerHTML = "جارٍ التحميل...";
+      const apiUrl = `https://godownloader.com/api/tiktok-no-watermark-free?url=${encodeURIComponent(url)}&key=godownloader.com`;
 
       try {
-        const apiURL = `https://tooly.chative.io/tiktok/video?url=${encodeURIComponent(url)}`;
-        const response = await fetch(apiURL);
-        const data = await response.json();
+        const res = await fetch(apiUrl);
+        const data = await res.json();
 
-        if (data?.video_url) {
-          resultDiv.innerHTML = `
-            <video controls src="${data.video_url}"></video>
-            <br>
-            <a href="${data.video_url}" download>تحميل الفيديو</a>
-          `;
-        } else {
-          resultDiv.innerHTML = "فشل في جلب الفيديو أو الرابط غير صحيح.";
+        if (!data || !data.video) {
+          result.innerHTML = "<p style='color:red;'>❌ Failed to fetch video. Try another link.</p>";
+          return;
         }
-      } catch (error) {
-        resultDiv.innerHTML = "حدث خطأ أثناء الاتصال بالخدمة.";
+
+        result.innerHTML = `
+          <p><strong>🎯 Title:</strong> ${data.title}</p>
+          <img src="${data.thumbnail}" alt="Thumbnail">
+          <br><br>
+          <a href="${data.video}" target="_blank" download>
+            <button>⬇️ Download Now</button>
+          </a>
+        `;
+      } catch (err) {
+        console.error(err);
+        result.innerHTML = "<p style='color:red;'>❌ Error occurred. Check the console for details.</p>";
       }
     }
   </script>
+
 </body>
 </html>

@@ -1,91 +1,152 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Download TikTok Video - No Watermark</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: 50px auto;
-      text-align: center;
-      padding: 20px;
-      background-color: #f5f5f5;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+‏<!DOCTYPE html>
+‏<html lang="ar">
+‏<head>
+‏  <meta charset="UTF-8">
+‏  <title>🎬 أداة TikTok - عرض وتحميل الفيديوهات</title>
+‏  <style>
+‏    body {
+‏      font-family: Arial, sans-serif;
+‏      direction: rtl;
+‏      background: #f0f0f0;
+‏      margin: 0;
+‏      padding: 30px;
+‏      text-align: center;
     }
-    input, button {
-      width: 100%;
-      padding: 12px;
-      margin-top: 10px;
-      font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+‏    input, button {
+‏      width: 90%;
+‏      max-width: 400px;
+‏      padding: 12px;
+‏      margin: 10px 0;
+‏      font-size: 16px;
+‏      border-radius: 6px;
+‏      border: 1px solid #ccc;
     }
-    button {
-      background-color: #007bff;
-      color: white;
-      cursor: pointer;
+‏    button {
+‏      background: #007bff;
+‏      color: white;
+‏      cursor: pointer;
+‏      border: none;
     }
-    button:hover {
-      background-color: #0056b3;
+‏    button:hover {
+‏      background: #0056b3;
     }
-    img {
-      margin-top: 20px;
-      max-width: 100%;
-      border-radius: 6px;
+‏    #status {
+‏      margin: 20px 0;
+‏      font-weight: bold;
+‏      color: #d00;
     }
-    #result {
-      margin-top: 20px;
+‏    #videoContainer blockquote {
+‏      margin: auto;
+‏      max-width: 600px;
+‏      min-width: 325px;
     }
-  </style>
-</head>
-<body>
+‏    #downloadLink {
+‏      display: none;
+‏      margin-top: 15px;
+    }
+‏  </style>
+‏</head>
+‏<body>
+‏  <h2>📲 عرض وتحميل فيديو TikTok</h2>
 
-  <h2>🎬 TikTok Video Downloader</h2>
-  <p>Paste a TikTok video link below to download it without watermark</p>
+‏  <input type="text" id="tiktokInput" placeholder="ألصق رابط فيديو TikTok (حتى لو مختصر)">
+‏  <br>
+‏  <button onclick="handleInput()">عرض الفيديو</button>
 
-  <input type="text" id="videoUrl" placeholder="e.g. https://vt.tiktok.com/...">
-  <button onclick="downloadVideo()">Download Video</button>
+‏  <div id="status"></div>
+‏  <div id="videoContainer"></div>
+‏  <a id="downloadLink" href="#" target="_blank" download>⬇️ تحميل الفيديو</a>
 
-  <div id="result"></div>
+‏  <script>
+‏    const UNSHORTEN_TOKEN = ' 7c0745c8698b3822502387854f32aa5dd8926306'; // توكن API
 
-  <script>
-    async function downloadVideo() {
-      const url = document.getElementById("videoUrl").value.trim();
-      const result = document.getElementById("result");
-      result.innerHTML = "⏳ Processing...";
+‏    async function unshortenLink(url) {
+‏      const apiUrl = 'https://unshorten.me/api/v2/unshorten?url=' + encodeURIComponent(url);
+‏      const res = await fetch(apiUrl, {
+‏        method: 'GET',
+‏        headers: {
+‏          'Authorization': 'Token ' + UNSHORTEN_TOKEN
+        }
+      });
+‏      if (!res.ok) throw new Error('فك الرابط فشل: ' + res.status);
+‏      const data = await res.json();
+‏      return data.success ? data["unshortened_url"] : null;
+    }
 
-      if (!url) {
-        result.innerHTML = "<p style='color:red;'>⚠️ Please enter a TikTok video URL.</p>";
-        return;
+‏    function extractVideoId(url) {
+‏      const match = url.match(/video\/(\d{10,25})/);
+‏      return match ? match[1] : null;
+    }
+
+‏    function getDownloadUrl(tiktokUrl) {
+‏      return `https://ssstik.io/api/convert?url=${encodeURIComponent(tiktokUrl)}`;
+    }
+
+‏    async function handleInput() {
+‏      const input = document.getElementById('tiktokInput').value.trim();
+‏      const status = document.getElementById('status');
+‏      const container = document.getElementById('videoContainer');
+‏      const downloadLink = document.getElementById('downloadLink');
+
+‏      status.textContent = '⏳ جاري المعالجة…';
+‏      status.style.color = '#000';
+‏      container.innerHTML = '';
+‏      downloadLink.style.display = 'none';
+‏      downloadLink.href = '#';
+
+‏      if (!input) {
+‏        status.textContent = '⚠️ الرجاء إدخال رابط TikTok.';
+‏        status.style.color = 'red';
+‏        return;
       }
 
-      const apiUrl = `https://godownloader.com/api/tiktok-no-watermark-free?url=${encodeURIComponent(url)}&key=godownloader.com`;
-
-      try {
-        const res = await fetch(apiUrl);
-        const data = await res.json();
-
-        if (!data || !data.video) {
-          result.innerHTML = "<p style='color:red;'>❌ Failed to fetch video. Try another link.</p>";
-          return;
+‏      let fullUrl = input;
+‏      try {
+‏        if (input.includes('vt.tiktok.com') || input.includes('bit.ly') || input.includes('tinyurl.com')) {
+‏          fullUrl = await unshortenLink(input);
+‏          if (!fullUrl) throw new Error('فشل فك الرابط المختصر.');
         }
 
-        result.innerHTML = `
-          <p><strong>🎯 Title:</strong> ${data.title}</p>
-          <img src="${data.thumbnail}" alt="Thumbnail">
-          <br><br>
-          <a href="${data.video}" target="_blank" download>
-            <button>⬇️ Download Now</button>
-          </a>
-        `;
-      } catch (err) {
-        console.error(err);
-        result.innerHTML = "<p style='color:red;'>❌ Error occurred. Check the console for details.</p>";
+        // منع فيديوهات الصور أو الـ slideshow
+‏        if (fullUrl.includes('/photo/') || fullUrl.includes('carousel')) {
+‏          status.textContent = '⚠️ هذا النوع من الفيديوهات (صور فقط) لا يمكن تضمينه.';
+‏          status.style.color = 'orange';
+‏          return;
+        }
+
+‏        const id = extractVideoId(fullUrl);
+‏        if (!id) throw new Error('الرجاء استخدام رابط يحتوي على video/ID.');
+
+        // تضمين الفيديو
+‏        const block = document.createElement('blockquote');
+‏        block.className = 'tiktok-embed';
+‏        block.setAttribute('cite', fullUrl);
+‏        block.setAttribute('data-video-id', id);
+‏        block.innerHTML = '<section>جاري تحميل الفيديو...</section>';
+‏        container.appendChild(block);
+
+‏        const oldScript = document.querySelector('#tiktok-script');
+‏        if (oldScript) oldScript.remove();
+
+‏        const script = document.createElement('script');
+‏        script.src = 'https://www.tiktok.com/embed.js';
+‏        script.async = true;
+‏        script.id = 'tiktok-script';
+‏        document.body.appendChild(script);
+
+        // رابط تحميل تجريبي (غير رسمي، وقد لا يعمل مع كل الفيديوهات)
+‏        const ssstikUrl = `https://ssstik.io/en?url=${encodeURIComponent(fullUrl)}`;
+‏        downloadLink.href = ssstikUrl;
+‏        downloadLink.style.display = 'inline-block';
+
+‏        status.textContent = '✅ الفيديو ظاهر ويمكن تحميله أدناه 👇';
+‏        status.style.color = 'green';
+
+‏      } catch (err) {
+‏        status.textContent = '❌ ' + err.message;
+‏        status.style.color = 'red';
       }
     }
-  </script>
-
-</body>
-</html>
+‏  </script>
+‏</body>
+‏</html>

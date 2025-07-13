@@ -1,152 +1,333 @@
-‏<!DOCTYPE html>
-‏<html lang="ar">
-‏<head>
-‏  <meta charset="UTF-8">
-‏  <title>🎬 أداة TikTok - عرض وتحميل الفيديوهات</title>
-‏  <style>
-‏    body {
-‏      font-family: Arial, sans-serif;
-‏      direction: rtl;
-‏      background: #f0f0f0;
-‏      margin: 0;
-‏      padding: 30px;
-‏      text-align: center;
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>تحويل الصور إلى PDF</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Cairo', sans-serif;
+      background: linear-gradient(to right, #f7f8fa, #e7ecf1);
+      color: #333;
+      margin: 0;
+      padding: 20px;
     }
-‏    input, button {
-‏      width: 90%;
-‏      max-width: 400px;
-‏      padding: 12px;
-‏      margin: 10px 0;
-‏      font-size: 16px;
-‏      border-radius: 6px;
-‏      border: 1px solid #ccc;
-    }
-‏    button {
-‏      background: #007bff;
-‏      color: white;
-‏      cursor: pointer;
-‏      border: none;
-    }
-‏    button:hover {
-‏      background: #0056b3;
-    }
-‏    #status {
-‏      margin: 20px 0;
-‏      font-weight: bold;
-‏      color: #d00;
-    }
-‏    #videoContainer blockquote {
-‏      margin: auto;
-‏      max-width: 600px;
-‏      min-width: 325px;
-    }
-‏    #downloadLink {
-‏      display: none;
-‏      margin-top: 15px;
-    }
-‏  </style>
-‏</head>
-‏<body>
-‏  <h2>📲 عرض وتحميل فيديو TikTok</h2>
 
-‏  <input type="text" id="tiktokInput" placeholder="ألصق رابط فيديو TikTok (حتى لو مختصر)">
-‏  <br>
-‏  <button onclick="handleInput()">عرض الفيديو</button>
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: #fff;
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 0 25px rgba(0,0,0,0.05);
+    }
 
-‏  <div id="status"></div>
-‏  <div id="videoContainer"></div>
-‏  <a id="downloadLink" href="#" target="_blank" download>⬇️ تحميل الفيديو</a>
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
 
-‏  <script>
-‏    const UNSHORTEN_TOKEN = ' 7c0745c8698b3822502387854f32aa5dd8926306'; // توكن API
+    p {
+      text-align: center;
+      margin-bottom: 20px;
+    }
 
-‏    async function unshortenLink(url) {
-‏      const apiUrl = 'https://unshorten.me/api/v2/unshorten?url=' + encodeURIComponent(url);
-‏      const res = await fetch(apiUrl, {
-‏        method: 'GET',
-‏        headers: {
-‏          'Authorization': 'Token ' + UNSHORTEN_TOKEN
-        }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    select {
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 15px;
+    }
+
+    .btn {
+      background: #1a73e8;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    .btn:hover {
+      background: #155ab6;
+    }
+
+    .upload-area {
+      border: 2px dashed #bbb;
+      padding: 30px;
+      border-radius: 12px;
+      text-align: center;
+      background-color: #fafafa;
+      margin-bottom: 20px;
+    }
+
+    .upload-area.dragover {
+      border-color: #4a90e2;
+    }
+
+    .custom-file-label {
+      display: inline-block;
+      padding: 10px 20px;
+      border: 1px solid #999;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #f4f4f4;
+      margin-bottom: 15px;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .preview-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .preview-item {
+      width: 110px;
+      height: 110px;
+      position: relative;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+      cursor: move;
+    }
+
+    .preview-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .remove-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: red;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    body.dark-mode {
+      background: #121212;
+      color: #eee;
+    }
+
+    body.dark-mode .container {
+      background: #1e1e1e;
+      box-shadow: none;
+    }
+
+    body.dark-mode .upload-area {
+      background: #2a2a2a;
+      border-color: #555;
+    }
+
+    body.dark-mode .custom-file-label {
+      background: #333;
+      color: #eee;
+      border-color: #666;
+    }
+
+    body.dark-mode .preview-item {
+      background: #444;
+      border-color: #666;
+    }
+
+    body.dark-mode .btn {
+      background: #3a87f5;
+    }
+
+    body.dark-mode .btn:hover {
+      background: #2460d1;
+    }
+
+    body.dark-mode select {
+      background-color: #333;
+      color: #eee;
+      border-color: #666;
+    }
+
+    @media (max-width: 600px) {
+      .preview-item {
+        width: 80px;
+        height: 80px;
+      }
+      .btn {
+        width: 100%;
+      }
+      .controls {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>محول الصور إلى PDF</h1>
+    <p>اختر صور، رتبها، وحدد الإعدادات ثم اضغط "تحويل"</p>
+
+    <label class="custom-file-label" for="imageInput">📁 اختر صور</label>
+    <input type="file" id="imageInput" multiple accept="image/*" />
+    <div class="upload-area" id="dropZone">أو اسحب الصور إلى هنا</div>
+
+    <div class="controls">
+      <select id="pageSize">
+        <option value="a4">A4</option>
+        <option value="a3">A3</option>
+        <option value="letter">Letter</option>
+      </select>
+
+      <select id="orientation">
+        <option value="p">عمودي</option>
+        <option value="l">أفقي</option>
+      </select>
+
+      <button class="btn" onclick="generatePDF()">📄 تحويل إلى PDF</button>
+      <button class="btn" onclick="resetAll()">🔄 إعادة تعيين</button>
+      <button class="btn" onclick="toggleDarkMode()">🌙 الوضع الليلي</button>
+    </div>
+
+    <div class="preview-container" id="imagePreview"></div>
+  </div>
+
+  <script>
+    const dropZone = document.getElementById("dropZone");
+    const imageInput = document.getElementById("imageInput");
+    const previewContainer = document.getElementById("imagePreview");
+    let images = [];
+
+    imageInput.addEventListener("change", (e) => handleFiles(e.target.files));
+
+    dropZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropZone.classList.add("dragover");
+    });
+
+    dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("dragover");
+      handleFiles(e.dataTransfer.files);
+    });
+
+    function handleFiles(files) {
+      [...files].forEach(file => {
+        if (!file.type.startsWith("image/")) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          images.push(e.target.result);
+          updatePreview();
+        };
+        reader.readAsDataURL(file);
       });
-‏      if (!res.ok) throw new Error('فك الرابط فشل: ' + res.status);
-‏      const data = await res.json();
-‏      return data.success ? data["unshortened_url"] : null;
     }
 
-‏    function extractVideoId(url) {
-‏      const match = url.match(/video\/(\d{10,25})/);
-‏      return match ? match[1] : null;
+    function updatePreview() {
+      previewContainer.innerHTML = "";
+      images.forEach((src, index) => {
+        const div = document.createElement("div");
+        div.className = "preview-item";
+        div.draggable = true;
+        div.dataset.index = index;
+
+        div.addEventListener("dragstart", dragStart);
+        div.addEventListener("dragover", dragOver);
+        div.addEventListener("drop", dropImage);
+
+        div.innerHTML = `
+          <img src="${src}" />
+          <button class="remove-btn" onclick="removeImage(${index})">×</button>
+        `;
+        previewContainer.appendChild(div);
+      });
     }
 
-‏    function getDownloadUrl(tiktokUrl) {
-‏      return `https://ssstik.io/api/convert?url=${encodeURIComponent(tiktokUrl)}`;
+    function removeImage(index) {
+      images.splice(index, 1);
+      updatePreview();
     }
 
-‏    async function handleInput() {
-‏      const input = document.getElementById('tiktokInput').value.trim();
-‏      const status = document.getElementById('status');
-‏      const container = document.getElementById('videoContainer');
-‏      const downloadLink = document.getElementById('downloadLink');
+    function resetAll() {
+      images = [];
+      imageInput.value = "";
+      updatePreview();
+    }
 
-‏      status.textContent = '⏳ جاري المعالجة…';
-‏      status.style.color = '#000';
-‏      container.innerHTML = '';
-‏      downloadLink.style.display = 'none';
-‏      downloadLink.href = '#';
+    let draggedIndex;
 
-‏      if (!input) {
-‏        status.textContent = '⚠️ الرجاء إدخال رابط TikTok.';
-‏        status.style.color = 'red';
-‏        return;
+    function dragStart(e) {
+      draggedIndex = +e.target.closest(".preview-item").dataset.index;
+    }
+
+    function dragOver(e) {
+      e.preventDefault();
+    }
+
+    function dropImage(e) {
+      const targetIndex = +e.target.closest(".preview-item").dataset.index;
+      const temp = images[draggedIndex];
+      images.splice(draggedIndex, 1);
+      images.splice(targetIndex, 0, temp);
+      updatePreview();
+    }
+
+    async function generatePDF() {
+      if (images.length === 0) {
+        alert("يرجى اختيار صور أولاً");
+        return;
       }
 
-‏      let fullUrl = input;
-‏      try {
-‏        if (input.includes('vt.tiktok.com') || input.includes('bit.ly') || input.includes('tinyurl.com')) {
-‏          fullUrl = await unshortenLink(input);
-‏          if (!fullUrl) throw new Error('فشل فك الرابط المختصر.');
-        }
+      const pageSize = document.getElementById("pageSize").value;
+      const orientation = document.getElementById("orientation").value;
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF(orientation, "mm", pageSize);
 
-        // منع فيديوهات الصور أو الـ slideshow
-‏        if (fullUrl.includes('/photo/') || fullUrl.includes('carousel')) {
-‏          status.textContent = '⚠️ هذا النوع من الفيديوهات (صور فقط) لا يمكن تضمينه.';
-‏          status.style.color = 'orange';
-‏          return;
-        }
+      for (let i = 0; i < images.length; i++) {
+        const img = new Image();
+        img.src = images[i];
+        await new Promise(resolve => img.onload = resolve);
 
-‏        const id = extractVideoId(fullUrl);
-‏        if (!id) throw new Error('الرجاء استخدام رابط يحتوي على video/ID.');
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const ratio = Math.min(pageWidth / img.width, pageHeight / img.height);
 
-        // تضمين الفيديو
-‏        const block = document.createElement('blockquote');
-‏        block.className = 'tiktok-embed';
-‏        block.setAttribute('cite', fullUrl);
-‏        block.setAttribute('data-video-id', id);
-‏        block.innerHTML = '<section>جاري تحميل الفيديو...</section>';
-‏        container.appendChild(block);
+        const width = img.width * ratio;
+        const height = img.height * ratio;
+        const x = (pageWidth - width) / 2;
+        const y = (pageHeight - height) / 2;
 
-‏        const oldScript = document.querySelector('#tiktok-script');
-‏        if (oldScript) oldScript.remove();
-
-‏        const script = document.createElement('script');
-‏        script.src = 'https://www.tiktok.com/embed.js';
-‏        script.async = true;
-‏        script.id = 'tiktok-script';
-‏        document.body.appendChild(script);
-
-        // رابط تحميل تجريبي (غير رسمي، وقد لا يعمل مع كل الفيديوهات)
-‏        const ssstikUrl = `https://ssstik.io/en?url=${encodeURIComponent(fullUrl)}`;
-‏        downloadLink.href = ssstikUrl;
-‏        downloadLink.style.display = 'inline-block';
-
-‏        status.textContent = '✅ الفيديو ظاهر ويمكن تحميله أدناه 👇';
-‏        status.style.color = 'green';
-
-‏      } catch (err) {
-‏        status.textContent = '❌ ' + err.message;
-‏        status.style.color = 'red';
+        pdf.addImage(img, 'JPEG', x, y, width, height);
+        if (i < images.length - 1) pdf.addPage();
       }
+
+      pdf.save("converted.pdf");
     }
-‏  </script>
-‏</body>
-‏</html>
+
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark-mode");
+    }
+  </script>
+</body>
+</html>

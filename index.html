@@ -2,332 +2,228 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>تحويل الصور إلى PDF</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>استخراج النص من الصور - OCR بالعربية</title>
+
+  <!-- تحسين محركات البحث -->
+  <meta name="description" content="أفضل أداة مجانية لاستخراج النصوص من الصور باللغة العربية والإنجليزية. استخراج نص من الصور اون لاين، تحويل الصور إلى نصوص قابلة للتعديل. OCR عربي وإنجليزي بدقة عالية.">
+  <meta name="keywords" content="استخراج النص من الصور, OCR بالعربي, تحويل صورة إلى نص, استخراج نصوص من صورة, OCR عربي, استخراج الكتابة من الصور, التعرف البصري على الحروف, OCR online Arabic, تحويل الصور إلى نص مكتوب, استخراج النصوص من الصور, Arabic OCR online, التعرف على النص من الصور, موقع OCR, تحويل الصور إلى PDF, OCR free, استخراج النص من صورة, OCR image to text, صورة إلى نص عربي, قراءة النص من الصورة, استخراج المحتوى من الصور, نسخ النص من الصور, تمييز الحروف بالعربي, برنامج تحويل الصور إلى نصوص, قراءة الكتابة من صورة, OCR عربي مجاني, استخراج الكتابة من الصور بدقة, تحويل صورة مكتوبة إلى نص, مسح صورة واستخراج نصها, استخراج جمل من الصور, الذكاء الاصطناعي OCR, معالجة الصور للنصوص, OCR حديث, OCR مفتوح المصدر, OCR في المتصفح بدون تحميل, تحويل صورة إلى PDF عربي, استخراج نص من صورة PNG JPG">
+
+  <link href="https://fonts.googleapis.com/css2?family=Cairo&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: 'Cairo', sans-serif;
-      background: linear-gradient(to right, #f7f8fa, #e7ecf1);
-      color: #333;
-      margin: 0;
-      padding: 20px;
+      margin:0; padding:0;
+      font-family:'Cairo',sans-serif;
+      background:linear-gradient(135deg,#1e1f52,#430d5c);
+      color:#eee;
+      display:flex; justify-content:center; align-items:center;
+      min-height:100vh;
+      flex-direction: column;
+    }
+
+    .menu-icon {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      font-size: 24px;
+      cursor: pointer;
+      z-index: 999;
     }
 
     .container {
-      max-width: 900px;
-      margin: auto;
-      background: #fff;
-      border-radius: 14px;
-      padding: 20px;
-      box-shadow: 0 0 25px rgba(0,0,0,0.05);
+      background:linear-gradient(to bottom right,#2b2d66,#3c1d65);
+      width:90%; max-width:420px;
+      padding:25px 20px;
+      border-radius:18px;
+      box-shadow:0 10px 30px rgba(0,0,0,0.6);
+      text-align:center;
     }
 
     h1 {
-      text-align: center;
-      margin-bottom: 10px;
+      font-size:1.5rem;
+      color:#f3d9ff;
+      margin-bottom:20px;
     }
 
-    p {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-      margin-bottom: 20px;
-    }
-
-    select {
-      padding: 8px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 15px;
-    }
-
-    .btn {
-      background: #1a73e8;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 15px;
-    }
-
-    .btn:hover {
-      background: #155ab6;
-    }
-
-    .upload-area {
-      border: 2px dashed #bbb;
-      padding: 30px;
-      border-radius: 12px;
-      text-align: center;
-      background-color: #fafafa;
-      margin-bottom: 20px;
-    }
-
-    .upload-area.dragover {
-      border-color: #4a90e2;
-    }
-
-    .custom-file-label {
-      display: inline-block;
-      padding: 10px 20px;
-      border: 1px solid #999;
-      border-radius: 8px;
-      cursor: pointer;
-      background: #f4f4f4;
-      margin-bottom: 15px;
+    .drop-area {
+      border:2px dashed #6f42c1;
+      border-radius:12px;
+      padding:20px;
+      margin-bottom:20px;
+      background:#1e1f52;
     }
 
     input[type="file"] {
-      display: none;
+      width:100%;
+      padding:10px;
+      background:#3c3f7d;
+      color:#fff;
+      border:none;
+      border-radius:6px;
+      margin-top:10px;
     }
 
-    .preview-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
+    button {
+      width:100%;
+      background:#8e33ff;
+      border:none;
+      color:#fff;
+      padding:12px;
+      border-radius:6px;
+      font-size:1rem;
+      cursor:pointer;
+      transition:0.3s;
+      margin-top:10px;
     }
 
-    .preview-item {
-      width: 110px;
-      height: 110px;
-      position: relative;
-      border: 1px solid #ccc;
-      border-radius: 10px;
-      overflow: hidden;
-      background: #fff;
-      cursor: move;
+    button:hover { background:#a650ff; }
+    button:disabled { background:#555; cursor:not-allowed; }
+
+    .loader {
+      margin:18px auto;
+      width:48px; height:48px;
+      border:6px solid #eee;
+      border-top-color:#a044ff;
+      border-radius:50%;
+      animation:spin 1s linear infinite;
+      display:none;
     }
 
-    .preview-item img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+    @keyframes spin {
+      to { transform:rotate(360deg); }
     }
 
-    .remove-btn {
-      position: absolute;
-      top: 4px;
-      right: 4px;
-      background: red;
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 22px;
-      height: 22px;
-      font-weight: bold;
-      cursor: pointer;
+    textarea {
+      width:100%;
+      height:150px;
+      margin-top:15px;
+      padding:12px;
+      border-radius:6px;
+      border:2px solid #6c5dd3;
+      background:#1e1f52;
+      color:#eee;
+      font-size:1rem;
+      display:none;
+      resize:none;
     }
 
-    body.dark-mode {
-      background: #121212;
-      color: #eee;
+    .error {
+      color:#ff7276;
+      margin-top:12px;
+      font-size:0.9rem;
+      display:none;
     }
 
-    body.dark-mode .container {
-      background: #1e1e1e;
-      box-shadow: none;
+    .actions {
+      margin-top:15px;
+      display:none;
     }
 
-    body.dark-mode .upload-area {
-      background: #2a2a2a;
-      border-color: #555;
+    .actions button {
+      margin-top:10px;
     }
 
-    body.dark-mode .custom-file-label {
-      background: #333;
-      color: #eee;
-      border-color: #666;
-    }
-
-    body.dark-mode .preview-item {
-      background: #444;
-      border-color: #666;
-    }
-
-    body.dark-mode .btn {
-      background: #3a87f5;
-    }
-
-    body.dark-mode .btn:hover {
-      background: #2460d1;
-    }
-
-    body.dark-mode select {
-      background-color: #333;
-      color: #eee;
-      border-color: #666;
-    }
-
-    @media (max-width: 600px) {
-      .preview-item {
-        width: 80px;
-        height: 80px;
-      }
-      .btn {
-        width: 100%;
-      }
-      .controls {
-        flex-direction: column;
-        align-items: center;
-      }
+    footer {
+      margin-top: 30px;
+      font-size: 0.85rem;
+      color: #ccc;
+      text-align: center;
+      padding: 10px 0;
     }
   </style>
 </head>
 <body>
+
+  <!-- أيقونة القائمة -->
+  <div class="menu-icon" onclick="alert('القائمة ستتوفر قريبًا')">☰</div>
+
+  <!-- المحتوى الرئيسي -->
   <div class="container">
-    <h1>محول الصور إلى PDF</h1>
-    <p>اختر صور، رتبها، وحدد الإعدادات ثم اضغط "تحويل"</p>
-
-    <label class="custom-file-label" for="imageInput">📁 اختر صور</label>
-    <input type="file" id="imageInput" multiple accept="image/*" />
-    <div class="upload-area" id="dropZone">أو اسحب الصور إلى هنا</div>
-
-    <div class="controls">
-      <select id="pageSize">
-        <option value="a4">A4</option>
-        <option value="a3">A3</option>
-        <option value="letter">Letter</option>
-      </select>
-
-      <select id="orientation">
-        <option value="p">عمودي</option>
-        <option value="l">أفقي</option>
-      </select>
-
-      <button class="btn" onclick="generatePDF()">📄 تحويل إلى PDF</button>
-      <button class="btn" onclick="resetAll()">🔄 إعادة تعيين</button>
-      <button class="btn" onclick="toggleDarkMode()">🌙 الوضع الليلي</button>
+    <h1>🧠 استخراج النص من الصور</h1>
+    <div class="drop-area">
+      <label for="imageInput">اختر صورة من جهازك</label>
+      <input type="file" id="imageInput" accept="image/*">
     </div>
-
-    <div class="preview-container" id="imagePreview"></div>
+    <button id="extractBtn" disabled>📄 استخراج النص</button>
+    <div class="loader" id="loaderOCR"></div>
+    <div class="error" id="errMsg"></div>
+    <textarea id="result" placeholder="النص المستخرج سيظهر هنا..."></textarea>
+    <div class="actions" id="actions">
+      <button onclick="downloadText()">📥 تحميل النص</button>
+      <button onclick="downloadPDF()">🧾 حفظ كـ PDF</button>
+    </div>
   </div>
 
+  <!-- حقوق النشر -->
+  <footer>
+    جميع الحقوق محفوظة © 2025 - موقع استخراج النص من الصور | OCR Online Arabic Text Extractor
+  </footer>
+
+  <!-- المكتبات -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <!-- السكريبت -->
   <script>
-    const dropZone = document.getElementById("dropZone");
-    const imageInput = document.getElementById("imageInput");
-    const previewContainer = document.getElementById("imagePreview");
-    let images = [];
+    (function(){
+      const input = document.getElementById('imageInput'),
+            btn = document.getElementById('extractBtn'),
+            loader = document.getElementById('loaderOCR'),
+            errEl = document.getElementById('errMsg'),
+            textarea = document.getElementById('result'),
+            actions = document.getElementById('actions');
 
-    imageInput.addEventListener("change", (e) => handleFiles(e.target.files));
-
-    dropZone.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      dropZone.classList.add("dragover");
-    });
-
-    dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
-    dropZone.addEventListener("drop", (e) => {
-      e.preventDefault();
-      dropZone.classList.remove("dragover");
-      handleFiles(e.dataTransfer.files);
-    });
-
-    function handleFiles(files) {
-      [...files].forEach(file => {
-        if (!file.type.startsWith("image/")) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          images.push(e.target.result);
-          updatePreview();
-        };
-        reader.readAsDataURL(file);
+      input.addEventListener('change', ()=>{
+        errEl.style.display='none';
+        textarea.style.display='none';
+        actions.style.display='none';
+        btn.disabled = !(input.files && input.files[0]);
       });
-    }
 
-    function updatePreview() {
-      previewContainer.innerHTML = "";
-      images.forEach((src, index) => {
-        const div = document.createElement("div");
-        div.className = "preview-item";
-        div.draggable = true;
-        div.dataset.index = index;
+      btn.addEventListener('click', ()=>{
+        const file = input.files[0];
+        if (!file) return;
+        btn.disabled = true;
+        errEl.style.display='none';
+        loader.style.display='block';
 
-        div.addEventListener("dragstart", dragStart);
-        div.addEventListener("dragover", dragOver);
-        div.addEventListener("drop", dropImage);
-
-        div.innerHTML = `
-          <img src="${src}" />
-          <button class="remove-btn" onclick="removeImage(${index})">×</button>
-        `;
-        previewContainer.appendChild(div);
+        Tesseract.recognize(file, 'ara+eng', {
+          logger: m => {}
+        }).then(({data:{text}})=>{
+          loader.style.display='none';
+          textarea.value = text.trim();
+          textarea.style.display = 'block';
+          actions.style.display = 'block';
+          btn.disabled = false;
+        }).catch(err=>{
+          loader.style.display='none';
+          errEl.textContent = 'حدث خطأ أثناء استخراج النص. حاول مجددًا.';
+          errEl.style.display = 'block';
+          btn.disabled = false;
+          console.error(err);
+        });
       });
-    }
 
-    function removeImage(index) {
-      images.splice(index, 1);
-      updatePreview();
-    }
+      window.downloadText = function(){
+        const t = textarea.value;
+        if (!t) return;
+        const blob = new Blob([t], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'extracted.txt';
+        a.click();
+      };
 
-    function resetAll() {
-      images = [];
-      imageInput.value = "";
-      updatePreview();
-    }
-
-    let draggedIndex;
-
-    function dragStart(e) {
-      draggedIndex = +e.target.closest(".preview-item").dataset.index;
-    }
-
-    function dragOver(e) {
-      e.preventDefault();
-    }
-
-    function dropImage(e) {
-      const targetIndex = +e.target.closest(".preview-item").dataset.index;
-      const temp = images[draggedIndex];
-      images.splice(draggedIndex, 1);
-      images.splice(targetIndex, 0, temp);
-      updatePreview();
-    }
-
-    async function generatePDF() {
-      if (images.length === 0) {
-        alert("يرجى اختيار صور أولاً");
-        return;
-      }
-
-      const pageSize = document.getElementById("pageSize").value;
-      const orientation = document.getElementById("orientation").value;
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF(orientation, "mm", pageSize);
-
-      for (let i = 0; i < images.length; i++) {
-        const img = new Image();
-        img.src = images[i];
-        await new Promise(resolve => img.onload = resolve);
-
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        const ratio = Math.min(pageWidth / img.width, pageHeight / img.height);
-
-        const width = img.width * ratio;
-        const height = img.height * ratio;
-        const x = (pageWidth - width) / 2;
-        const y = (pageHeight - height) / 2;
-
-        pdf.addImage(img, 'JPEG', x, y, width, height);
-        if (i < images.length - 1) pdf.addPage();
-      }
-
-      pdf.save("converted.pdf");
-    }
-
-    function toggleDarkMode() {
-      document.body.classList.toggle("dark-mode");
-    }
+      window.downloadPDF = function(){
+        const t = textarea.value;
+        if (!t) return;
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const lines = doc.splitTextToSize(t, 180);
+        doc.text(lines, 10, 10);
+        doc.save('extracted.pdf');
+      };
+    })();
   </script>
 </body>
 </html>

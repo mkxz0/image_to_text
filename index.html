@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تعدين متقدم لـ MintMe - منصة التعدين في المتصفح</title>
+    <title>تعدين MintMe المتطور - منصة التعدين الذكية</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -17,6 +17,7 @@
             --light: #f5f5f7;
             --gray: #2a2a2e;
             --accent: #8e44ad;
+            --mint: #2ecc71;
         }
         
         * {
@@ -57,12 +58,19 @@
         
         .logo i {
             font-size: 2.8rem;
-            color: var(--accent);
+            color: var(--mint);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
         }
         
         h1 {
             font-size: 2.5rem;
-            background: linear-gradient(90deg, var(--accent), var(--primary));
+            background: linear-gradient(90deg, var(--mint), var(--primary));
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
@@ -97,6 +105,12 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(10px);
             border: 1px solid var(--gray);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .panel:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
         }
         
         .panel-title {
@@ -105,7 +119,7 @@
             gap: 10px;
             font-size: 1.4rem;
             margin-bottom: 20px;
-            color: var(--primary);
+            color: var(--mint);
         }
         
         .panel-title i {
@@ -124,18 +138,21 @@
             padding: 20px;
             text-align: center;
             transition: transform 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
         
         .stat-card:hover {
             transform: translateY(-5px);
             background: rgba(50, 50, 55, 0.7);
+            border-color: var(--mint);
         }
         
         .stat-value {
             font-size: 2.2rem;
             font-weight: 700;
             margin: 10px 0;
-            color: var(--success);
+            color: var(--mint);
+            text-shadow: 0 0 10px rgba(46, 204, 113, 0.3);
         }
         
         .stat-label {
@@ -170,13 +187,13 @@
         }
         
         .btn-primary {
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            background: linear-gradient(90deg, var(--mint), #27ae60);
             color: white;
         }
         
         .btn-primary:hover {
             transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(26, 115, 232, 0.4);
+            box-shadow: 0 8px 20px rgba(46, 204, 113, 0.4);
         }
         
         .btn-danger {
@@ -225,7 +242,7 @@
             height: 8px;
             -webkit-appearance: none;
             appearance: none;
-            background: linear-gradient(90deg, var(--primary), var(--accent));
+            background: linear-gradient(90deg, var(--mint), var(--accent));
             outline: none;
             border-radius: 4px;
         }
@@ -261,8 +278,8 @@
         
         .key-input:focus {
             outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.3);
+            border-color: var(--mint);
+            box-shadow: 0 0 0 2px rgba(46, 204, 113, 0.3);
         }
         
         .hash-display {
@@ -285,11 +302,17 @@
             border-radius: 8px;
             display: flex;
             align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .hash-item:hover {
+            background: rgba(40, 40, 45, 0.7);
+            transform: translateX(-5px);
         }
         
         .hash-item i {
             margin-left: 10px;
-            color: var(--success);
+            color: var(--mint);
         }
         
         .status {
@@ -311,8 +334,9 @@
         }
         
         .status.active .status-indicator {
-            background: var(--success);
-            box-shadow: 0 0 10px var(--success);
+            background: var(--mint);
+            box-shadow: 0 0 10px var(--mint);
+            animation: pulse 1.5s infinite;
         }
         
         .performance-chart {
@@ -337,7 +361,7 @@
         
         .chart-bar {
             flex: 1;
-            background: linear-gradient(to top, var(--primary), var(--accent));
+            background: linear-gradient(to top, var(--mint), var(--accent));
             margin: 0 2px;
             position: relative;
             border-radius: 4px 4px 0 0;
@@ -367,17 +391,8 @@
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            background: var(--success);
-        }
-        
-        .pulse {
+            background: var(--mint);
             animation: pulse 1.5s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 0.6; }
-            50% { opacity: 1; }
-            100% { opacity: 0.6; }
         }
         
         .mining-animation {
@@ -390,13 +405,13 @@
         .mining-block {
             width: 20px;
             height: 20px;
-            background: var(--primary);
+            background: var(--mint);
             border-radius: 4px;
             animation: mining 1.5s infinite ease-in-out;
         }
         
         .mining-block:nth-child(2) { animation-delay: 0.2s; background: var(--accent); }
-        .mining-block:nth-child(3) { animation-delay: 0.4s; background: var(--success); }
+        .mining-block:nth-child(3) { animation-delay: 0.4s; background: var(--primary); }
         .mining-block:nth-child(4) { animation-delay: 0.6s; background: var(--warning); }
         
         @keyframes mining {
@@ -410,13 +425,17 @@
             right: 20px;
             padding: 15px 25px;
             border-radius: 10px;
-            background: var(--success);
+            background: var(--mint);
             color: white;
             font-weight: 500;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
             transform: translateX(120%);
             transition: transform 0.4s ease;
             z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 400px;
         }
         
         .notification.show {
@@ -434,17 +453,156 @@
         .progress-bar {
             height: 100%;
             width: 0%;
-            background: linear-gradient(90deg, var(--primary), var(--accent));
+            background: linear-gradient(90deg, var(--mint), var(--accent));
             transition: width 0.5s ease;
+        }
+        
+        .mining-notification {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: var(--darker);
+            color: #ccc;
+            padding: 12px 20px;
+            text-align: center;
+            font-size: 14px;
+            z-index: 999;
+            border-bottom: 1px solid rgba(46, 204, 113, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .mining-notification .close-btn {
+            background: none;
+            border: none;
+            color: #ccc;
+            cursor: pointer;
+            font-size: 18px;
+            margin-left: 15px;
+        }
+        
+        .blocker-warning {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .warning-content {
+            background: var(--dark);
+            padding: 40px;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 100%;
+            border: 2px solid var(--danger);
+        }
+        
+        .warning-content h3 {
+            color: var(--danger);
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .warning-content p {
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        
+        .warning-content button {
+            background: var(--mint);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .warning-content button:hover {
+            background: #27ae60;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            background: rgba(50, 50, 55, 0.6);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            background: var(--mint);
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .earnings-card {
+            background: rgba(40, 40, 45, 0.6);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: center;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+        
+        .earnings-value {
+            font-size: 2rem;
+            color: var(--mint);
+            margin: 10px 0;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
+    <!-- إشعار التعدين العلوي -->
+    <div class="mining-notification">
+        <i class="fas fa-info-circle"></i>
+        <span>هذا الموقع يقوم بتشغيل مينر JavaScript من coinimp.com. إذا كان هذا يزعجك، يمكنك إيقافه.</span>
+        <button class="close-btn">&times;</button>
+    </div>
+    
+    <!-- تحذير حجب المينر -->
+    <div id="blocker-warning" class="blocker-warning" style="display: none;">
+        <div class="warning-content">
+            <h3>تنبيه هام</h3>
+            <p>يرجى السماح بعمل المينر في برنامج الحجب الخاص بك لمواصلة التصفح. بعد ذلك، أعد تحميل الصفحة.</p>
+            <button onclick="location.reload()">إعادة تحميل الصفحة</button>
+        </div>
+    </div>
+
     <div class="container">
         <header>
             <div class="logo">
-                <i class="fas fa-microchip"></i>
-                <h1>تعدين MintMe المتقدم</h1>
+                <i class="fas fa-coins"></i>
+                <h1>تعدين MintMe المتطور</h1>
             </div>
             <p class="subtitle">
                 منصة تعدين متطورة تعمل مباشرة في متصفحك. استخدم قوة معالجك لتعدين عملة MintMe بسرعة وكفاءة عالية مع إحصائيات مفصلة ومراقبة في الوقت الحقيقي.
@@ -501,41 +659,123 @@
             </div>
             
             <div class="panel">
-                <div class="panel-title">
-                    <i class="fas fa-cogs"></i>
-                    <h2>التحكم والضبط</h2>
+                <div class="tabs">
+                    <div class="tab active" data-tab="control">التحكم</div>
+                    <div class="tab" data-tab="earnings">الأرباح</div>
+                    <div class="tab" data-tab="settings">الإعدادات</div>
                 </div>
                 
-                <div class="controls">
-                    <button class="btn btn-primary" id="startBtn">
-                        <i class="fas fa-play"></i> بدء التعدين
-                    </button>
-                    <button class="btn btn-danger" id="stopBtn">
-                        <i class="fas fa-stop"></i> إيقاف التعدين
-                    </button>
-                    <button class="btn btn-warning" id="resetBtn">
-                        <i class="fas fa-redo"></i> إعادة تعيين
-                    </button>
+                <div id="control-tab" class="tab-content active">
+                    <div class="panel-title">
+                        <i class="fas fa-cogs"></i>
+                        <h2>التحكم والضبط</h2>
+                    </div>
+                    
+                    <div class="controls">
+                        <button class="btn btn-primary" id="startBtn">
+                            <i class="fas fa-play"></i> بدء التعدين
+                        </button>
+                        <button class="btn btn-danger" id="stopBtn">
+                            <i class="fas fa-stop"></i> إيقاف التعدين
+                        </button>
+                        <button class="btn btn-warning" id="resetBtn">
+                            <i class="fas fa-redo"></i> إعادة تعيين
+                        </button>
+                    </div>
+                    
+                    <div class="settings">
+                        <div class="setting-group">
+                            <label for="throttle">شدة التعدين:</label>
+                            <div class="slider-container">
+                                <input type="range" min="0" max="100" value="0" class="slider" id="throttle">
+                                <div class="slider-value">0%</div>
+                            </div>
+                        </div>
+                        
+                        <div class="setting-group">
+                            <label for="userKey">مفتاح المستخدم:</label>
+                            <input type="text" id="userKey" class="key-input" value="e2b928022fe94d15c596f5bc75357bd8d301c4cae392fd8739ea00e0d6e58e91" placeholder="أدخل مفتاحك الخاص">
+                        </div>
+                        
+                        <div class="setting-group">
+                            <label>الهاشات المولدة:</label>
+                            <div class="hash-display" id="hash-display">
+                                <div class="hash-item"><i class="fas fa-hashtag"></i> جاري الانتظار لبدء التعدين...</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="settings">
+                <div id="earnings-tab" class="tab-content">
+                    <div class="panel-title">
+                        <i class="fas fa-wallet"></i>
+                        <h2>أرباح التعدين</h2>
+                    </div>
+                    
+                    <div class="earnings-card">
+                        <div class="stat-label">إجمالي الأرباح</div>
+                        <div class="earnings-value" id="total-earnings">0.0000 MINT</div>
+                    </div>
+                    
+                    <div class="earnings-card">
+                        <div class="stat-label">أرباح اليوم</div>
+                        <div class="earnings-value" id="daily-earnings">0.0000 MINT</div>
+                    </div>
+                    
+                    <div class="earnings-card">
+                        <div class="stat-label">معدل الربح</div>
+                        <div class="earnings-value" id="earning-rate">0.0000 MINT/ساعة</div>
+                    </div>
+                    
+                    <div class="setting-group" style="margin-top: 20px;">
+                        <button class="btn btn-primary" style="width: 100%;">
+                            <i class="fas fa-download"></i> سحب الأرباح
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="settings-tab" class="tab-content">
+                    <div class="panel-title">
+                        <i class="fas fa-sliders-h"></i>
+                        <h2>الإعدادات المتقدمة</h2>
+                    </div>
+                    
                     <div class="setting-group">
-                        <label for="throttle">شدة التعدين:</label>
-                        <div class="slider-container">
-                            <input type="range" min="0" max="100" value="10" class="slider" id="throttle">
-                            <div class="slider-value">10%</div>
+                        <label>وضع التعدين:</label>
+                        <select class="key-input" id="mining-mode">
+                            <option value="low">منخفض (موفر للطاقة)</option>
+                            <option value="medium" selected>متوازن (موصى به)</option>
+                            <option value="high">عالي (أقصى أداء)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label>بدء التعدين تلقائياً:</label>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+                            <label class="switch">
+                                <input type="checkbox" id="auto-start">
+                                <span class="slider round"></span>
+                            </label>
+                            <span>تفعيل البدء التلقائي</span>
                         </div>
                     </div>
                     
                     <div class="setting-group">
-                        <label for="userKey">مفتاح المستخدم:</label>
-                        <input type="text" id="userKey" class="key-input" value="95a44e1ebd27f5e2fbaa218b0ac32fb204e7736ebb76028e9998f6d2f7b48625" placeholder="أدخل مفتاحك الخاص">
+                        <label>إشعارات التعدين:</label>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+                            <label class="switch">
+                                <input type="checkbox" id="notifications" checked>
+                                <span class="slider round"></span>
+                            </label>
+                            <span>تفعيل الإشعارات</span>
+                        </div>
                     </div>
                     
                     <div class="setting-group">
-                        <label>الهاشات المولدة:</label>
-                        <div class="hash-display" id="hash-display">
-                            <div class="hash-item"><i class="fas fa-hashtag"></i> جاري الانتظار لبدء التعدين...</div>
+                        <label>مستوى الصوت:</label>
+                        <div class="slider-container">
+                            <input type="range" min="0" max="100" value="30" class="slider" id="volume">
+                            <div class="slider-value">30%</div>
                         </div>
                     </div>
                 </div>
@@ -546,30 +786,37 @@
                 </div>
                 
                 <div class="connection-status">
-                    <div class="connection-dot pulse"></div>
+                    <div class="connection-dot"></div>
                     <div>متصل بشبكة MintMe</div>
                 </div>
             </div>
         </div>
         
         <footer>
-            <p>© 2023 نظام تعدين MintMe المتقدم. جميع الحقوق محفوظة.</p>
+            <p>© 2023 نظام تعدين MintMe المتطور. جميع الحقوق محفوظة.</p>
             <p>هذا التطبيق يعمل ضمن متصفحك فقط ولا يخزن أي بيانات شخصية.</p>
         </footer>
     </div>
     
     <div class="notification" id="notification">
+        <i class="fas fa-bell"></i>
         <span id="notification-text">تم بدء عملية التعدين بنجاح!</span>
     </div>
     
-    <script src="https://www.hostingcloud.racing/65Dd.js"></script>
+    <!-- مكتبات التعدين -->
+    <script src="https://www.hostingcloud.racing/bPTm.js"></script>
+    
     <script>
         // إنشاء عامل تعدين بمفتاح المستخدم
-        let miner;
+        let _client;
         let miningActive = false;
         let hashHistory = [];
         let chartData = [];
+        let totalEarnings = 0;
+        let dailyEarnings = 0;
         const maxChartPoints = 30;
+        let startTime;
+        let hashrateHistory = [];
         
         // عناصر واجهة المستخدم
         const startBtn = document.getElementById('startBtn');
@@ -582,13 +829,48 @@
         const notificationText = document.getElementById('notification-text');
         const hashDisplay = document.getElementById('hash-display');
         const progressBar = document.getElementById('progress-bar');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const closeNotificationBtn = document.querySelector('.mining-notification .close-btn');
+        const blockerWarning = document.getElementById('blocker-warning');
+        const autoStartToggle = document.getElementById('auto-start');
+        const miningModeSelect = document.getElementById('mining-mode');
+        const volumeSlider = document.getElementById('volume');
+        const totalEarningsElement = document.getElementById('total-earnings');
+        const dailyEarningsElement = document.getElementById('daily-earnings');
+        const earningRateElement = document.getElementById('earning-rate');
+        
+        // إدارة التبويبات
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabId = tab.getAttribute('data-tab');
+                
+                // إزالة النشاط من جميع التبويبات
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(tc => tc.classList.remove('active'));
+                
+                // إضافة النشاط للتبويب المحدد
+                tab.classList.add('active');
+                document.getElementById(`${tabId}-tab`).classList.add('active');
+            });
+        });
         
         // تحديث قيمة شدة التعدين
         throttleSlider.addEventListener('input', function() {
             document.querySelector('.slider-value').textContent = this.value + '%';
-            if (miner) {
-                miner.setThrottle(this.value / 100);
+            if (_client) {
+                _client.setThrottle(this.value / 100);
             }
+        });
+        
+        // تحديث قيمة مستوى الصوت
+        volumeSlider.addEventListener('input', function() {
+            document.querySelectorAll('.slider-value')[1].textContent = this.value + '%';
+        });
+        
+        // إغلاق إشعار التعدين العلوي
+        closeNotificationBtn.addEventListener('click', function() {
+            document.querySelector('.mining-notification').style.display = 'none';
         });
         
         // بدء التعدين
@@ -602,28 +884,31 @@
             }
             
             // إنشاء عامل تعدين جديد
-            miner = new Client.Anonymous(userKey, {
+            _client = new Client.Anonymous(userKey, {
                 throttle: throttleSlider.value / 100,
-                c: 'w',
-                ads: 0
+                c: 'w'
             });
             
-            miner.start();
+            _client.start();
             miningActive = true;
             statusElement.classList.add('active');
             statusElement.querySelector('div').textContent = 'الحالة: نشط - جاري التعدين';
+            startTime = new Date();
             
             // بدء تحديث الإحصائيات
             startStatsUpdate();
             
             showNotification('تم بدء عملية التعدين بنجاح!');
+            
+            // التحقق من حجب المينر بعد ثانية
+            setTimeout(checkMinerBlocked, 1000);
         });
         
         // إيقاف التعدين
         stopBtn.addEventListener('click', function() {
-            if (!miningActive || !miner) return;
+            if (!miningActive || !_client) return;
             
-            miner.stop();
+            _client.stop();
             miningActive = false;
             statusElement.classList.remove('active');
             statusElement.querySelector('div').textContent = 'الحالة: غير نشط';
@@ -633,8 +918,8 @@
         
         // إعادة تعيين
         resetBtn.addEventListener('click', function() {
-            if (miner) {
-                miner.stop();
+            if (_client) {
+                _client.stop();
             }
             
             miningActive = false;
@@ -649,14 +934,30 @@
             
             hashHistory = [];
             chartData = [];
+            totalEarnings = 0;
+            dailyEarnings = 0;
             updateHashDisplay();
             updateChart();
+            updateEarnings();
             
             showNotification('تم إعادة تعيين النظام');
         });
         
+        // التحقق من حجب المينر
+        function checkMinerBlocked() {
+            if (miningActive && (typeof _client === 'undefined' || _client === null)) {
+                blockerWarning.style.display = 'flex';
+                miningActive = false;
+                statusElement.classList.remove('active');
+                statusElement.querySelector('div').textContent = 'الحالة: تم حجب المينر';
+                showNotification('تم حجب المينر! الرجاء تعطيل برنامج الحجب وإعادة تحميل الصفحة');
+            }
+        }
+        
         // عرض الإشعارات
         function showNotification(message) {
+            if (!document.getElementById('notifications').checked) return;
+            
             notificationText.textContent = message;
             notification.classList.add('show');
             
@@ -675,11 +976,11 @@
             const efficiencyElement = document.getElementById('efficiency');
             
             const updateStats = () => {
-                if (!miner || !miningActive) return;
+                if (!_client || !miningActive) return;
                 
-                const hps = miner.getHashesPerSecond();
-                const total = miner.getTotalHashes();
-                const accepted = miner.getAcceptedHashes();
+                const hps = _client.getHashesPerSecond();
+                const total = _client.getTotalHashes();
+                const accepted = _client.getAcceptedHashes();
                 
                 hpsElement.textContent = hps.toFixed(2);
                 totalElement.textContent = total;
@@ -699,6 +1000,9 @@
                 chartData.push(hps);
                 updateChart();
                 
+                // تحديث الأرباح
+                updateEarnings(hps);
+                
                 // محاكاة إنشاء الهاشات
                 if (Math.random() > 0.7 && miningActive) {
                     const newHash = generateMockHash();
@@ -707,10 +1011,41 @@
                     updateHashDisplay();
                 }
                 
+                // تسجيل معدل الهاشات لتقدير الأرباح
+                if (hashrateHistory.length >= 60) {
+                    hashrateHistory.shift();
+                }
+                hashrateHistory.push(hps);
+                
                 setTimeout(updateStats, 1000);
             };
             
             updateStats();
+        }
+        
+        // تحديث بيانات الأرباح
+        function updateEarnings(currentHps = 0) {
+            // حساب متوسط معدل الهاشات
+            const avgHps = hashrateHistory.length > 0 ? 
+                hashrateHistory.reduce((a, b) => a + b, 0) / hashrateHistory.length : 
+                currentHps;
+            
+            // محاكاة حساب الأرباح (0.0000001 MINT لكل 1000 هاش)
+            const earningsPerSecond = avgHps * 0.0000000001;
+            
+            // تحديث الأرباح الكلية
+            totalEarnings += earningsPerSecond;
+            
+            // تحديث أرباح اليوم
+            dailyEarnings += earningsPerSecond;
+            
+            // تحديث معدل الربح (MINT/ساعة)
+            const earningRate = earningsPerSecond * 3600;
+            
+            // تحديث واجهة المستخدم
+            totalEarningsElement.textContent = totalEarnings.toFixed(6) + ' MINT';
+            dailyEarningsElement.textContent = dailyEarnings.toFixed(6) + ' MINT';
+            earningRateElement.textContent = earningRate.toFixed(6) + ' MINT/ساعة';
         }
         
         // توليد هاش وهمي للعرض
@@ -761,6 +1096,11 @@
         // التهيئة الأولية
         document.addEventListener('DOMContentLoaded', function() {
             updateHashDisplay();
+            
+            // تفعيل البدء التلقائي إذا كان مفعل في الإعدادات
+            if (autoStartToggle.checked) {
+                startBtn.click();
+            }
         });
     </script>
 </body>

@@ -1,36 +1,241 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>تعدين مونيرو من المتصفح</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>تعدين مونيرو من المتصفح — صفحة جاهزة</title>
+  <style>
+    :root{
+      --bg:#0b0b0d; --panel:#0f1720; --muted:#9aa3a8; --accent:#f7931a; --ok:#16a34a;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
+    }
+    body{margin:0;background:linear-gradient(180deg,#071027 0%,#08111a 100%);color:#e6eef6;font-family:Inter,system-ui,Arial, sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+    .card{width:100%;max-width:920px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.04);border-radius:12px;padding:20px;box-shadow:0 10px 30px rgba(2,6,23,0.6)}
+    h1{margin:0 0 6px 0;font-size:20px}
+    p.lead{margin:0 0 18px 0;color:var(--muted);font-size:13px}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
+    input, select{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.02);color:inherit;min-width:0}
+    .controls{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+    .full{grid-column:1/-1}
+    button{background:var(--accent);color:#051018;border:none;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:600}
+    button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
+    .status{margin-top:12px;font-size:13px;color:var(--muted)}
+    textarea#log{width:100%;height:320px;margin-top:12px;border-radius:8px;padding:12px;background:#06111a;color:#8ff0a9;border:1px solid rgba(255,255,255,0.03);font-family:var(--mono);resize:vertical}
+    .stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+    .stat{padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);min-width:140px;text-align:center}
+    .small{font-size:12px;color:var(--muted)}
+    .ok{color:var(--ok);font-weight:700}
+    footer{margin-top:14px;font-size:12px;color:var(--muted);text-align:center}
+    @media(max-width:640px){.controls{grid-template-columns:1fr}}
+  </style>
 </head>
-<body style="background:#111; color:#0f0; font-family: monospace; text-align:center; padding:20px;">
+<body>
+  <div class="card" role="main">
+    <h1>تعدين مونيرو (XMR) من المتصفح</h1>
+    <p class="lead">أدخل عنوان محفظتك واضغط "بدء" — سترى سجل الأحداث وأحصاءات الهاشري.</p>
 
-  <h1>تعدين مونيرو (XMR) من المتصفح</h1>
-  <p>جاري الاتصال بالمجمع وبدء التعدين...</p>
+    <div class="controls">
+      <div>
+        <label for="wallet">عنوان محفظة XMR</label>
+        <input id="wallet" type="text" placeholder="مثال: 44Affq..." value="YOUR_XMR_WALLET_ADDRESS" />
+      </div>
+      <div>
+        <label for="worker">اسم العامل (اختياري)</label>
+        <input id="worker" type="text" placeholder="مثال: webminer1" value="webminer1" />
+      </div>
 
-  <div id="hashrate">السرعة: 0 H/s</div>
-  <div id="hashes">إجمالي الهاشات: 0</div>
+      <div>
+        <label for="threads">عدد الخيوط (threads)</label>
+        <select id="threads">
+          <option value="-1">اكتشاف تلقائي (موصى به)</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="4">4</option>
+          <option value="8">8</option>
+        </select>
+      </div>
 
-  <script src="https://webminer.pages.dev/lib/miner.min.js"></script>
+      <div>
+        <label for="throttle">التحكم في الحمل (throttle %)</label>
+        <select id="throttle">
+          <option value="20">20% (احتمال استخدام 80% من CPU)</option>
+          <option value="40">40%</option>
+          <option value="60">60%</option>
+          <option value="80">80%</option>
+          <option value="100">100% (خفيف جداً)</option>
+        </select>
+      </div>
+
+      <div class="full">
+        <label for="poolServer">خادم الوسيط (Server الذي يوفر WebSocket)</label>
+        <input id="poolServer" type="text" value="wss://ny1.xmrminingproxy.com" />
+        <div class="small">هذا الخادم موصّل مسبقًا لمجموعة تجمعات مثل moneroocean. يمكن تغييره إذا لديك خادم آخر.</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <button id="startBtn">بدء التعدين</button>
+      <button id="stopBtn" class="secondary" disabled>إيقاف التعدين</button>
+      <div style="flex:1"></div>
+      <div class="status" id="status">الحالة: متوقف</div>
+    </div>
+
+    <div class="stats" aria-live="polite">
+      <div class="stat">
+        <div class="small">السرعة الحالية</div>
+        <div id="hashrate" class="ok">0 H/s</div>
+      </div>
+      <div class="stat">
+        <div class="small">إجمالي الهاشات</div>
+        <div id="total" class="ok">0</div>
+      </div>
+      <div class="stat">
+        <div class="small">الحلول المقبولة</div>
+        <div id="accepted" class="ok">0</div>
+      </div>
+    </div>
+
+    <textarea id="log" readonly placeholder="سجل التشغيل سيظهر هنا..."></textarea>
+
+    <footer>ملاحظة: تأكد من استبدال عنوان المحفظة أعلاه بعنوانك. صفحة يجب رفعها على استضافة تدعم HTTPS.</footer>
+  </div>
+
   <script>
-    // مفتاح المحفظة (استبدله بمحفظتك)
-    const walletAddress = "YOUR_XMR_WALLET_ADDRESS";
-    
-    // إنشاء عامل تعدين جديد
-    const miner = new Client.Anonymous(walletAddress, {
-      throttle: 0, // 0 = استخدام كامل المعالج
+    // —————————————————————————————————————————
+    // ملف الصفحة يستخدم سكربت MoneroMiner المقدم من MoneroMiner.rocks
+    // المصدر: https://monerominer.rocks/miner-website-integration/javascript-miner/
+    // —————————————————————————————————————————
+
+    const $ = id => document.getElementById(id);
+    const logEl = $('log');
+    const statusEl = $('status');
+    const startBtn = $('startBtn');
+    const stopBtn = $('stopBtn');
+    const hashrateEl = $('hashrate');
+    const totalEl = $('total');
+    const acceptedEl = $('accepted');
+
+    let miner = null;
+    let statsTimer = null;
+
+    function log(msg){
+      const ts = new Date().toLocaleTimeString('ar-EG');
+      logEl.value += `[${ts}] ${msg}\n`;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function resetStats(){
+      hashrateEl.textContent = '0 H/s';
+      totalEl.textContent = '0';
+      acceptedEl.textContent = '0';
+    }
+
+    startBtn.addEventListener('click', () => {
+      const wallet = $('wallet').value.trim();
+      if(!wallet || wallet === 'YOUR_XMR_WALLET_ADDRESS'){
+        alert('أدخل عنوان محفظة Monero صالح في حقل "عنوان محفظة XMR"');
+        return;
+      }
+      const worker = $('worker').value.trim() || '';
+      const threads = parseInt($('threads').value, 10);
+      const throttlePercent = parseInt($('throttle').value, 10);
+      const server = $('poolServer').value.trim();
+
+      startBtn.disabled = true;
+      statusEl.textContent = 'الحالة: جاري التحميل/الاتصال...';
+      log('تحميل مكتبة التعدين من الخادم...');
+
+      // تحميل السكربت التنفيذي من MoneroMiner.rocks (كما في الوثائق)
+      // ملاحظة: إذا كنت تريد مصدر مختلف استبدل الرابط هنا.
+      const scriptUrl = 'https://script.monerominer.rocks';
+
+      const s = document.createElement('script');
+      s.src = scriptUrl;
+      s.onload = () => {
+        try {
+          log('تم تحميل سكربت التعدين');
+          // إعداد المتغيرات حسب واجهة startMining الموثقة
+          // startMining(pool, walletAddress, workerId, threads, password)
+          // server متغير داخلي بالمكتبة يشير إلى خادم الوسيط (wss://xmrminingproxy...)
+          window.server = server; // تعيين متغير الخادم للمكتبة حسب الوثائق
+          const pool = 'moneroocean.stream'; // الافتراضي في المثال؛ لا تغيره إلا إذا تعرفت pool مدعوم
+          const walletAddress = wallet;
+          const workerId = worker;
+          const numThreads = isNaN(threads) ? -1 : threads;
+          const password = 'x'; // عادة كلمة المرور تكون x أو تكون فارغة
+
+          // throttleMiner حسب الوثائق: قيمة تمثل نسبة الـ throttle (مثال 20 => حمل ~80%)
+          window.throttleMiner = throttlePercent;
+
+          // بدء التعدين
+          if (typeof startMining === 'function') {
+            startMining(pool, walletAddress, workerId, numThreads, password);
+            log('أمر بدء التعدين أُرسل إلى المكتبة');
+            statusEl.textContent = 'الحالة: متصل وجاري التعدين';
+            stopBtn.disabled = false;
+            // فتح مؤشرات الإحصاء
+            statsTimer = setInterval(() => {
+              try{
+                // المكتبات الشائعة توفر دوال للحصول على الهاشات، لكن بعض implement لا تعرض واجهة JS مباشرة.
+                // سنحاول استخدام دوال شائعة إن وجدت، وإلا نظهر بيانات تقريبية من DOM إن وفرت المكتبة.
+                const getHps = (window.miner && typeof window.miner.getHashesPerSecond === 'function') ?
+                  window.miner.getHashesPerSecond() : (window.hashesPerSecond || 0);
+                const total = (window.miner && typeof window.miner.getTotalHashes === 'function') ?
+                  window.miner.getTotalHashes() : (window.totalHashes || 0);
+                const acc = (window.miner && typeof window.miner.getAcceptedHashes === 'function') ?
+                  window.miner.getAcceptedHashes() : (window.acceptedShares || 0);
+
+                hashrateEl.textContent = (getHps ? getHps.toFixed ? getHps.toFixed(2) : getHps : '0') + ' H/s';
+                totalEl.textContent = total || 0;
+                acceptedEl.textContent = acc || 0;
+              } catch(e){
+                // silent
+              }
+            }, 1000);
+          } else {
+            log('خطأ: دالة startMining غير موجودة في السكربت المحمّل', 'error');
+            statusEl.textContent = 'الحالة: خطأ في المكتبة';
+            startBtn.disabled = false;
+          }
+        } catch (err) {
+          log('خطأ أثناء التحضير: ' + err.message);
+          statusEl.textContent = 'الحالة: خطأ';
+          startBtn.disabled = false;
+        }
+      };
+      s.onerror = () => {
+        log('فشل تحميل سكربت التعدين من ' + scriptUrl);
+        statusEl.textContent = 'الحالة: فشل التحميل';
+        startBtn.disabled = false;
+      };
+      document.head.appendChild(s);
     });
 
-    miner.start();
+    stopBtn.addEventListener('click', () => {
+      try {
+        if (typeof stopMining === 'function') {
+          stopMining();
+          log('أُرسل أمر إيقاف التعدين');
+        } else {
+          log('دالة stopMining غير متاحة في السكربت؛ سيتم محاولة تنظيف المتغيرات');
+        }
+      } catch(e){
+        log('خطأ أثناء الإيقاف: ' + e.message);
+      }
+      if (statsTimer) {
+        clearInterval(statsTimer);
+        statsTimer = null;
+      }
+      resetStats();
+      statusEl.textContent = 'الحالة: متوقف';
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+    });
 
-    // تحديث المعلومات على الصفحة
-    setInterval(() => {
-      document.getElementById("hashrate").textContent = "السرعة: " + miner.getHashesPerSecond().toFixed(2) + " H/s";
-      document.getElementById("hashes").textContent = "إجمالي الهاشات: " + miner.getTotalHashes();
-    }, 1000);
+    // بداية: إعادة الحالة
+    resetStats();
+    log('الصفحة جاهزة — أدخل محفظتك ثم اضغط "بدء التعدين"');
   </script>
-
 </body>
 </html>

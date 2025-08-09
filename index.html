@@ -1,134 +1,202 @@
-‏<!DOCTYPE html>
-‏<html lang="ar" dir="rtl">
-‏<head>
-‏  <meta charset="UTF-8" />
-‏  <title>تعدين بيتكوين عبر Braiins Pool</title>
-‏  <style>
-‏    body {
-‏      font-family: Arial, sans-serif;
-‏      background: #222;
-‏      color: #eee;
-‏      padding: 20px;
-‏      direction: rtl;
-‏      text-align: center;
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>تعدين بيتكوين عبر Braiins Pool</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Noto Sans Arabic', sans-serif;
+      direction: rtl;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
     }
-‏    textarea {
-‏      width: 100%;
-‏      height: 300px;
-‏      background: #111;
-‏      color: #0f0;
-‏      border: none;
-‏      padding: 10px;
-‏      font-family: monospace;
-‏      resize: none;
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
-‏    input, button {
-‏      font-size: 1rem;
-‏      padding: 10px;
-‏      margin: 5px;
-‏      border-radius: 6px;
-‏      border: none;
+    .custom-shadow {
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
     }
-‏    input {
-‏      width: 300px;
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
     }
-‏    button {
-‏      background: #f7931a;
-‏      color: white;
-‏      cursor: pointer;
+    .animate-pulse:hover {
+      animation: pulse 1s ease-in-out infinite;
     }
-‏    button:hover {
-‏      background: #e07b00;
-    }
-‏  </style>
-‏</head>
-‏<body>
+  </style>
+</head>
+<body class="text-gray-100">
+  <div class="container mx-auto px-4 py-8 max-w-3xl">
+    <header class="text-center mb-8">
+      <h1 class="text-4xl font-bold mb-4">تعدين بيتكوين عبر Braiins Pool</h1>
+      <p class="text-gray-400">واجهة متقدمة للاتصال بتجمع التعدين</p>
+    </header>
 
-‏  <h1>تعدين بيتكوين عبر Braiins Pool</h1>
+    <main class="glass-effect rounded-2xl p-6 custom-shadow">
+      <div class="space-y-4">
+        <div>
+          <label for="workerName" class="block text-sm font-medium text-gray-300 mb-1">اسم العامل</label>
+          <input
+            id="workerName"
+            type="text"
+            placeholder="أدخل اسم العامل"
+            value="mezom94.workerName"
+            class="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
+          />
+        </div>
+        <div>
+          <label for="workerPass" class="block text-sm font-medium text-gray-300 mb-1">كلمة المرور</label>
+          <input
+            id="workerPass"
+            type="password"
+            placeholder="أدخل كلمة المرور"
+            value="anything123"
+            class="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500"
+          />
+        </div>
+        <button
+          id="connectBtn"
+          class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-lg transition duration-300 animate-pulse"
+        >
+          الاتصال بتجمع التعدين
+        </button>
+      </div>
 
-‏  <input id="workerName" type="text" placeholder="اسم العامل" value="mezom94.workerName" /><br/>
-‏  <input id="workerPass" type="text" placeholder="كلمة المرور" value="anything123" /><br/>
-‏  <button id="connectBtn">الاتصال بتجمع التعدين</button>
+      <div class="mt-6">
+        <h3 class="text-xl font-semibold mb-2">سجل الأحداث</h3>
+        <textarea
+          id="log"
+          readonly
+          class="w-full h-96 p-4 bg-gray-900 text-green-400 font-mono rounded-lg border border-gray-700 resize-none"
+        ></textarea>
+      </div>
+    </main>
 
-‏  <h3>سجل الأحداث</h3>
-‏  <textarea id="log" readonly></textarea>
+    <footer class="mt-8 text-center text-gray-400">
+      <p>© 2025 Braiins Pool Mining Interface. جميع الحقوق محفوظة.</p>
+    </footer>
+  </div>
 
-‏<script>
-‏  const poolUrl = 'wss://stratum.braiins.com:3333';
-‏  let ws;
-‏  const logArea = document.getElementById('log');
-‏  const connectBtn = document.getElementById('connectBtn');
+  <script>
+    class MiningPool {
+      constructor() {
+        this.poolUrl = 'wss://stratum.braiins.com:3333';
+        this.ws = null;
+        this.logArea = document.getElementById('log');
+        this.connectBtn = document.getElementById('connectBtn');
+        this.isConnected = false;
 
-‏  function log(msg) {
-‏    logArea.value += msg + "\n";
-‏    logArea.scrollTop = logArea.scrollHeight;
-  }
-
-‏  connectBtn.onclick = () => {
-‏    if (ws && ws.readyState === WebSocket.OPEN) {
-‏      ws.close();
-‏      log("تم قطع الاتصال");
-‏      connectBtn.textContent = "الاتصال بتجمع التعدين";
-‏      return;
-    }
-
-‏    const workerName = document.getElementById('workerName').value.trim();
-‏    const workerPass = document.getElementById('workerPass').value.trim();
-
-‏    ws = new WebSocket(poolUrl);
-
-‏    ws.onopen = () => {
-‏      log("تم الاتصال بتجمع التعدين");
-
-      // إرسال طلب الاشتراك
-‏      const subscribeRequest = {
-‏        id: 1,
-‏        method: 'mining.subscribe',
-‏        params: []
-      };
-‏      ws.send(JSON.stringify(subscribeRequest));
-    };
-
-‏    ws.onmessage = (event) => {
-‏      const message = JSON.parse(event.data);
-‏      log("رسالة من التجمع: " + JSON.stringify(message));
-
-‏      if (message.id === 1) {
-        // بعد الاشتراك، إرسال التفويض
-‏        const authorizeRequest = {
-‏          id: 2,
-‏          method: 'mining.authorize',
-‏          params: [workerName, workerPass]
-        };
-‏        ws.send(JSON.stringify(authorizeRequest));
+        this.connectBtn.addEventListener('click', () => this.toggleConnection());
       }
 
-‏      if (message.id === 2) {
-‏        if (message.result === true) {
-‏          log("تم التفويض بنجاح، جاهز للتعدين");
-‏          connectBtn.textContent = "قطع الاتصال";
-‏        } else {
-‏          log("فشل التفويض: " + JSON.stringify(message.error));
+      log(message, type = 'info') {
+        const timestamp = new Date().toLocaleTimeString('ar-EG');
+        const formattedMessage = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+        this.logArea.value += formattedMessage + '\n';
+        this.logArea.scrollTop = this.logArea.scrollHeight;
+      }
+
+      async toggleConnection() {
+        if (this.isConnected) {
+          this.disconnect();
+          return;
+        }
+
+        const workerName = document.getElementById('workerName').value.trim();
+        const workerPass = document.getElementById('workerPass').value.trim();
+
+        if (!workerName || !workerPass) {
+          this.log('يرجى إدخال اسم العامل وكلمة المرور', 'error');
+          return;
+        }
+
+        try {
+          await this.connect(workerName, workerPass);
+        } catch (error) {
+          this.log(`خطأ في الاتصال: ${error.message}`, 'error');
         }
       }
 
-‏      if (message.method === 'mining.notify') {
-‏        log("مهمة تعدين جديدة:");
-‏        log(JSON.stringify(message.params, null, 2));
-        // هنا يمكنك البدء بمعالجة المهمة (مثلاً البحث عن nonce)
+      async connect(workerName, workerPass) {
+        this.ws = new WebSocket(this.poolUrl);
+        this.connectBtn.disabled = true;
+        this.connectBtn.textContent = 'جاري الاتصال...';
+
+        this.ws.onopen = () => {
+          this.isConnected = true;
+          this.connectBtn.textContent = 'قطع الاتصال';
+          this.connectBtn.disabled = false;
+          this.log('تم الاتصال بتجمع التعدين', 'success');
+
+          const subscribeRequest = {
+            id: 1,
+            method: 'mining.subscribe',
+            params: []
+          };
+          this.ws.send(JSON.stringify(subscribeRequest));
+        };
+
+        this.ws.onmessage = (event) => {
+          try {
+            const message = JSON.parse(event.data);
+            this.log(`رسالة من التجمع: ${JSON.stringify(message, null, 2)}`);
+
+            if (message.id === 1) {
+              const authorizeRequest = {
+                id: 2,
+                method: 'mining.authorize',
+                params: [workerName, workerPass]
+              };
+              this.ws.send(JSON.stringify(authorizeRequest));
+            }
+
+            if (message.id === 2) {
+              if (message.result === true) {
+                this.log('تم التفويض بنجاح، جاهز للتعدين', 'success');
+              } else {
+                this.log(`فشل التفويض: ${JSON.stringify(message.error)}`, 'error');
+              }
+            }
+
+            if (message.method === 'mining.notify') {
+              this.log('مهمة تعدين جديدة:', 'info');
+              this.log(JSON.stringify(message.params, null, 2));
+            }
+          } catch (error) {
+            this.log(`خطأ في معالجة الرسالة: ${error.message}`, 'error');
+          }
+        };
+
+        this.ws.onerror = (error) => {
+          this.log(`خطأ في الاتصال: ${error.message}`, 'error');
+          this.disconnect();
+        };
+
+        this.ws.onclose = () => {
+          this.log('تم قطع الاتصال', 'info');
+          this.disconnect();
+        };
       }
-    };
 
-‏    ws.onerror = (err) => {
-‏      log("خطأ في الاتصال: " + err.message);
-    };
+      disconnect() {
+        if (this.ws) {
+          this.ws.close();
+        }
+        this.isConnected = false;
+        this.connectBtn.textContent = 'الاتصال بتجمع التعدين';
+        this.connectBtn.disabled = false;
+      }
+    }
 
-‏    ws.onclose = () => {
-‏      log("تم قطع الاتصال");
-‏      connectBtn.textContent = "الاتصال بتجمع التعدين";
-    };
-  };
-‏</script>
-
-‏</body>
-‏</html>
+    // Initialize the mining pool interface
+    const miningPool = new MiningPool();
+  </script>
+</body>
+</html>

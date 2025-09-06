@@ -1,257 +1,1917 @@
-‏<!DOCTYPE html>
-‏<html lang="ar" dir="rtl">
-‏<head>
-‏  <meta charset="utf-8" />
-‏  <meta name="viewport" content="width=device-width,initial-scale=1" />
-‏  <title>AI-Assisted Mining — Prediction + Local Search (Local Gemini Key)</title>
-‏  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
-‏  <style>
-‏    :root{--bg:#070708;--card:#0f1315;--fg:#e6f7ff;--accent:#22d3ee;--mut:#9fb0b8}
-‏    *{box-sizing:border-box}
-‏    html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
-‏    .wrap{max-width:980px;margin:12px auto;padding:14px}
-‏    h1{color:var(--accent);margin:6px 0;font-size:20px;text-align:center}
-‏    .card{background:var(--card);border-radius:12px;padding:12px;margin:10px 0;box-shadow:0 1px 0 #000 inset}
-‏    label{display:block;font-size:13px;color:var(--mut);margin-bottom:6px}
-‏    input,select,button,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid #122;background:#071011;color:var(--fg);font-size:14px}
-‏    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-‏    @media(max-width:720px){ .grid{grid-template-columns:1fr} }
-‏    .row{display:flex;gap:8px}
-‏    .row button{flex:1}
-‏    button.primary{background:linear-gradient(90deg,#22d3ee,#60a5fa);color:#001;font-weight:700}
-‏    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;direction:ltr}
-‏    table{width:100%;border-collapse:collapse;margin-top:8px}
-‏    th,td{padding:8px;border:1px solid #112;text-align:center}
-‏    th{background:#062e2f}
-‏    .muted{color:var(--mut);font-size:13px}
-‏    .small{font-size:13px}
-‏    .ok{color:#9ffb9f}
-‏  </style>
-‏</head>
-‏<body>
-‏<div class="wrap">
-‏  <h1>تعدين بمساعدة AI — تخمين Nonce ثم بحث محلي</h1>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wasla - Book Your Private Car in Egypt</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #bfa46e;
+            --primary-dark: #a38c64;
+            --secondary-color: #101010;
+            --light-bg: #f8f9fa;
+            --light-gray: #e9ecef;
+            --text-color: #333;
+            --text-light: #6c757d;
+            --success-color: #28a745;
+            --border-radius: 12px;
+            --box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
+            
+            /* Dark mode variables */
+            --dark-bg: #1a1a1a;
+            --dark-text: #f0f0f0;
+            --dark-card: #2d2d2d;
+            --dark-border: #444;
+        }
 
-‏  <div class="card">
-‏    <div class="grid">
-‏      <div>
-‏        <label>عنوان الكتلة (Header)</label>
-‏        <input id="header" value="BlockHeaderExample" />
-‏      </div>
-‏      <div>
-‏        <label>أصفار البداية (صعوبة بالـ hex)</label>
-‏        <input id="zeros" type="number" min="1" max="7" value="4" />
-‏      </div>
-‏      <div>
-‏        <label>نطاق Nonce (0..N)</label>
-‏        <input id="nonceCap" type="number" value="10000000" />
-‏      </div>
-‏      <div>
-‏        <label>حد المحاولات المحلي (Safety)</label>
-‏        <input id="maxLocal" type="number" value="200000" />
-‏      </div>
-‏    </div>
+        /* Dark mode styles */
+        body.dark-mode {
+            background-color: var(--dark-bg);
+            color: var(--dark-text);
+        }
 
-‏    <div style="margin-top:10px" class="grid">
-‏      <div>
-‏        <label>مقدار البحث حول التخمين (radius)</label>
-‏        <input id="radius" type="number" value="5000" />
-‏      </div>
-‏      <div>
-‏        <label>top-K (عند فشل التخمين الأول)</label>
-‏        <input id="topk" type="number" value="8" />
-‏      </div>
-‏    </div>
+        body.dark-mode .booking-progress,
+        body.dark-mode .booking-form,
+        body.dark-mode .booking-summary,
+        body.dark-mode .feature-card,
+        body.dark-mode .form-control,
+        body.dark-mode .car-option {
+            background-color: var(--dark-card);
+            color: var(--dark-text);
+            border-color: var(--dark-border);
+        }
 
-‏    <div style="margin-top:10px" class="muted small">سيتم: (1) طلب تخمين واحد من Gemini، (2) التحقق محليًا من التخمين، (3) بحث محلي ±radius، (4) عند الفشل نطلب قائمة top-K ونكرر.</div>
-‏  </div>
+        body.dark-mode .form-control {
+            background-color: var(--dark-card);
+            color: var(--dark-text);
+            border-color: var(--dark-border);
+        }
 
-‏  <div class="card">
-‏    <label>مفتاح Gemini (سيُضمَّن داخل الطلب — استخدم الصفحة محليًا فقط)</label>
-‏    <input id="geminiKey" value="AIzaSyCA4sXqUz7W3EU70wEZQ6_ttdL6osBlm4E" />
-‏    <div class="muted small">تنبيه أمني: حتى لو نافذة محلية، احتفظ بالمفتاح في مكان آمن وغيّره إذا لزم.</div>
-‏  </div>
+        body.dark-mode .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(191, 164, 110, 0.3);
+        }
 
-‏  <div class="card">
-‏    <div class="row">
-‏      <button id="btnRun" class="primary">▶️ تشغيل دورة AI-Prediction + Local Search</button>
-‏      <button id="btnRunRand">🔁 تشغيل التعدين العشوائي (Baseline)</button>
-‏      <button id="btnClear">🧹 تفريغ النتائج</button>
-‏    </div>
-‏    <div style="margin-top:8px" class="muted small">ملاحظة: اختر صعوبة صغيرة (3–4) أثناء التجارب على الهاتف لضمان نتائج في وقت معقول.</div>
-‏  </div>
+        body.dark-mode .summary-item,
+        body.dark-mode .form-section {
+            border-color: var(--dark-border);
+        }
 
-‏  <div class="card">
-‏    <div id="log" class="mono small" style="max-height:260px;overflow:auto"></div>
-‏    <div id="out"></div>
-‏  </div>
-‏</div>
+        body.dark-mode .summary-label,
+        body.dark-mode .car-desc,
+        body.dark-mode .section-subheading,
+        body.dark-mode .feature-desc,
+        body.dark-mode .tagline,
+        body.dark-mode .summary-note,
+        body.dark-mode .alert-info {
+            color: #ccc;
+        }
 
-‏<script>
-‏// ---------- Utilities ----------
-‏const $ = id => document.getElementById(id);
-‏function appendLog(s){ const d=document.createElement('div'); d.innerHTML=s; $('log').appendChild(d); $('log').scrollTop = $('log').scrollHeight; }
-‏function clearOut(){ $('out').innerHTML=''; }
-‏function clearLog(){ $('log').innerHTML=''; }
+        body.dark-mode .alert-info {
+            background-color: #2a4b6a;
+            border-color: #3a6ea5;
+        }
 
-‏// ---------- Double SHA-256 via WebCrypto ----------
-‏async function doubleSha256Hex(str){
-‏  const enc = new TextEncoder();
-‏  const first = await crypto.subtle.digest('SHA-256', enc.encode(str));
-‏  const first8 = new Uint8Array(first);
-‏  const second = await crypto.subtle.digest('SHA-256', first8);
-‏  return Array.from(new Uint8Array(second)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-‏function meetsDifficulty(hexHash, zeros){ for(let i=0;i<zeros;i++){ if(hexHash[i] !== '0') return false; } return true; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-‏// ---------- Gemini API direct calls (single guess + topK) ----------
-‏const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
-‏async function geminiSingleGuess(header, zeros, key, nonceCap){
-‏  const prompt = `You are assisting a cryptographic experiment. Given header = "${header}" and the requirement that double-SHA256(header + '|' + nonce) must start with ${zeros} hex zeros, return a single integer nonce (0..${nonceCap}) that is most likely to satisfy the condition. Return ONLY a JSON integer like: 123456. Do NOT include explanations.`;
-‏  const body = { contents:[{ parts:[{ text: prompt }]}] };
-‏  const t0 = performance.now();
-‏  const res = await fetch(GEMINI_URL, { method:'POST', headers:{ 'Content-Type':'application/json', 'X-goog-api-key': key }, body: JSON.stringify(body) });
-‏  const text = await res.text();
-‏  const latency = performance.now() - t0;
-‏  // extract first integer
-‏  const m = text.match(/-?\d+/);
-‏  if(!m) throw new Error('No integer returned by Gemini');
-‏  return { guess: (Number(m[0])>>>0), raw: text, latency };
-}
-‏async function geminiTopK(header, zeros, key, nonceCap, K){
-‏  const prompt = `Return a JSON array of up to ${K} integers (0..${nonceCap}) that are most likely to satisfy: double-SHA256(header + '|' + nonce) starts with ${zeros} hex zeros. Respond ONLY with a JSON array like: [123,456,...]. No other text.`;
-‏  const body = { contents:[{ parts:[{ text: prompt }]}] };
-‏  const t0 = performance.now();
-‏  const res = await fetch(GEMINI_URL, { method:'POST', headers:{ 'Content-Type':'application/json', 'X-goog-api-key': key }, body: JSON.stringify(body) });
-‏  const text = await res.text();
-‏  const latency = performance.now() - t0;
-‏  const m = text.match(/\[(?:.|\n)*?\]/);
-‏  if(!m) throw new Error('No array returned by Gemini');
-‏  try{ const arr = JSON.parse(m[0]); return { arr: arr.map(x=>Number(x)>>>0), raw:text, latency }; } catch(e){ throw new Error('Failed to parse Gemini array'); }
-}
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--light-bg);
+            color: var(--text-color);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            padding-bottom: 80px; /* Space for floating button */
+        }
 
-‏// ---------- Local search around guess ----------
-‏async function localSearchAround(header, guess, zeros, radius, nonceCap, limitLocal){
-‏  // Check guess then expand ±d
-‏  let attempts = 0;
-‏  function safe(n){ return n >= 0 && n <= nonceCap; }
-‏  // check single nonce
-‏  if(safe(guess)){
-‏    attempts++;
-‏    const h = await doubleSha256Hex(header + '|' + guess);
-‏    if(meetsDifficulty(h, zeros)) return { found: guess, hash: h, attempts };
-  }
-‏  for(let d=1; d<=radius; d++){
-‏    const a = guess + d;
-‏    if(a <= nonceCap){ attempts++; const h = await doubleSha256Hex(header + '|' + a); if(meetsDifficulty(h, zeros)) return { found: a, hash: h, attempts }; }
-‏    const b = guess - d;
-‏    if(b >= 0){ attempts++; const h = await doubleSha256Hex(header + '|' + b); if(meetsDifficulty(h, zeros)) return { found: b, hash: h, attempts }; }
-‏    if(attempts >= limitLocal) break;
-‏    if((d & 0x3ff) === 0) await new Promise(r=>setTimeout(r,0)); // yield
-  }
-‏  return { found: null, attempts };
-}
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
 
-‏// ---------- Main cycle: AI guess -> local search -> topK fallback ----------
-‏async function runAICycle(){
-‏  clearLog(); clearOut(); appendLog('<b>▶️ بدء دورة AI Prediction + Local Search</b>');
-‏  const header = $('header').value.trim(); const zeros = Number($('zeros').value)||3; const nonceCap = Number($('nonceCap').value)||10000000; const radius = Number($('radius').value)||5000; const topk = Number($('topk').value)||8; const maxLocal = Number($('maxLocal').value)||200000; const key = $('geminiKey').value.trim();
+        /* ترويسة الصفحة */
+        header {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, #2c3e50 100%);
+            color: white;
+            padding: 1.5rem 0;
+            text-align: center;
+            border-bottom: 4px solid var(--primary-color);
+            position: relative;
+        }
 
-‏  const metrics = { api_calls:0, api_latency_ms:0, local_attempts:0, total_time_ms:0 };
-‏  const tStart = performance.now();
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-‏  try{
-‏    // 1) single guess
-‏    appendLog('طلب تخمين واحد من Gemini...');
-‏    metrics.api_calls++;
-‏    const gRes = await geminiSingleGuess(header, zeros, key, nonceCap);
-‏    metrics.api_latency_ms += gRes.latency;
-‏    appendLog(`Gemini → guess = <span class="mono">${gRes.guess}</span> (latency ${gRes.latency.toFixed(0)} ms)`);
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
 
-‏    // 2) local search around guess
-‏    appendLog(`التحقق محليًا حول التخمين بمدى radius=${radius} ...`);
-‏    const local1 = await localSearchAround(header, gRes.guess, zeros, radius, nonceCap, maxLocal);
-‏    metrics.local_attempts += local1.attempts;
-‏    if(local1.found){
-‏      const total = performance.now()-tStart; metrics.total_time_ms = total;
-‏      appendLog(`<b class="ok">✅ نجح AI! nonce=${local1.found} — hash=${local1.hash.slice(0,20)}…</b>`);
-‏      appendResults('AI (single guess + local search) — نجاح', gRes, local1, metrics);
-‏      return;
-    }
+        .tagline {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin-bottom: 0;
+        }
 
-‏    appendLog('لم ينجح التخمين الأول — نطلب الآن قائمة top-K من Gemini...');
-‏    // 3) top-K fallback
-‏    metrics.api_calls++;
-‏    const topRes = await geminiTopK(header, zeros, key, nonceCap, topk);
-‏    metrics.api_latency_ms += topRes.latency;
-‏    appendLog(`Gemini → topK (latency ${topRes.latency.toFixed(0)} ms): <span class="mono">[${topRes.arr.join(', ')}]</span>`);
+        /* عناصر التحكم في الرأس */
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
 
-‏    // 4) iterate topK with smaller radius
-‏    const smallRadius = Math.min(1000, Math.floor(radius/5));
-‏    for(const cand of topRes.arr){
-‏      appendLog(`التحقق حول المرشح ${cand} (±${smallRadius}) ...`);
-‏      const res = await localSearchAround(header, cand, zeros, smallRadius, nonceCap, Math.max(5000, Math.floor(maxLocal/topk)) );
-‏      metrics.local_attempts += res.attempts;
-‏      if(res.found){
-‏        const total = performance.now()-tStart; metrics.total_time_ms = total;
-‏        appendLog(`<b class=ok>✅ نجح AI عبر top-K! nonce=${res.found} — hash=${res.hash.slice(0,20)}…</b>`);
-‏        appendResults('AI (topK fallback) — نجاح', {guessList: topRes.arr}, res, metrics);
-‏        return;
-      }
-    }
+        .control-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
 
-    // 5) فشل كامل — العرض
-‏    metrics.total_time_ms = performance.now()-tStart;
-‏    appendLog('<span class="muted">ℹ️ فشل AI في إيجاد حل ضمن القيود. تنفيذ استخراج عشوائي كـ baseline يمكن البدء به.</span>');
-‏    appendResults('AI — فشل', {guess: gRes.guess, raw:gRes.raw}, {found:null, attempts:metrics.local_attempts}, metrics);
-‏  }catch(err){
-‏    appendLog(`<span style="color:#ff8a8a">❌ خطأ: ${err.message}</span>`);
-  }
-}
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
 
-‏// ---------- Random baseline ----------
-‏async function runRandomBaseline(){
-‏  clearLog(); clearOut(); appendLog('▶️ بدء التعدين العشوائي (Baseline)');
-‏  const header = $('header').value.trim(); const zeros = Number($('zeros').value)||3; const nonceCap = Number($('nonceCap').value)||10000000; const maxLocal = Number($('maxLocal').value)||200000; setTimeout(()=>{},0);
-‏  const t0 = performance.now(); let attempts = 0; let found=null; let foundHash='';
-‏  while(attempts < maxLocal){
-‏    const nonce = Math.floor(Math.random()*nonceCap);
-‏    attempts++;
-‏    const h = await doubleSha256Hex(header + '|' + nonce);
-‏    if(meetsDifficulty(h, zeros)){ found = nonce; foundHash = h; break; }
-‏    if((attempts & 0x3ff) === 0) await new Promise(r=>setTimeout(r,0));
-  }
-‏  const t1 = performance.now(); appendLog(`محاولات: ${attempts}, زمن: ${(t1-t0).toFixed(1)} ms`);
-‏  if(found){ appendLog(`<b class=ok>✅ تم العثور على nonce=${found} — hash=${foundHash.slice(0,24)}…</b>`); appendResults('Random Baseline', {}, {found, attempts}, {total_time_ms: t1-t0}); }
-‏  else { appendLog('<span class="muted">– لم يتم العثور على حل ضمن الحد</span>'); appendResults('Random Baseline — no result', {}, {found:null, attempts}, {total_time_ms: t1-t0}); }
-}
+        .language-selector {
+            position: relative;
+        }
 
-‏// ---------- UI result rendering ----------
-‏function appendResults(title, guessInfo, localInfo, metrics){
-‏  const out = document.createElement('div'); out.innerHTML = `<h3 style="margin:8px 0 4px">${title}</h3>`;
-‏  const table = document.createElement('table'); table.innerHTML = `
-‏    <thead><tr><th>البند</th><th>القيمة</th></tr></thead>
-‏    <tbody>
-‏      <tr><td>API calls</td><td class="mono">${metrics.api_calls??0}</td></tr>
-‏      <tr><td>API latency (ms)</td><td class="mono">${metrics.api_latency_ms?.toFixed(1)??0}</td></tr>
-‏      <tr><td>Local attempts</td><td class="mono">${metrics.local_attempts??localInfo.attempts??0}</td></tr>
-‏      <tr><td>Total time (ms)</td><td class="mono">${(metrics.total_time_ms||0).toFixed(1)}</td></tr>
-‏      <tr><td>Nonce found</td><td class="mono">${localInfo.found??'—'}</td></tr>
-‏      <tr><td>Hash (prefix)</td><td class="mono">${localInfo.hash?localInfo.hash.slice(0,24)+'…':'—'}</td></tr>
-‏    </tbody>
-  `;
-‏  out.appendChild(table);
-‏  $('out').appendChild(out);
-‏  $('out').scrollTop = $('out').scrollHeight;
-}
+        .language-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
 
-‏// ---------- wiring ----------
-‏$('btnRun').onclick = ()=>{ runAICycle(); };
-‏$('btnRunRand').onclick = ()=>{ runRandomBaseline(); };
-‏$('btnClear').onclick = ()=>{ clearLog(); clearOut(); };
+        .language-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
 
-‏// Convenience: focus header on load
-‏$('header').focus();
-‏</script>
-‏</body>
-‏</html>
+        .language-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 0.5rem;
+            z-index: 1000;
+            display: none;
+            width: 120px;
+        }
+
+        body.dark-mode .language-options {
+            background: var(--dark-card);
+        }
+
+        .language-options.show {
+            display: block;
+        }
+
+        .language-option {
+            padding: 0.5rem;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+
+        .language-option:hover {
+            background: var(--light-gray);
+        }
+
+        body.dark-mode .language-option:hover {
+            background: var(--dark-border);
+        }
+
+        /* زر الاتصال العائم */
+        .floating-call-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 60px;
+            height: 60px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            transition: var(--transition);
+            animation: pulse 2s infinite;
+        }
+
+        .floating-call-btn:hover {
+            background-color: var(--primary-dark);
+            transform: scale(1.1);
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(191, 164, 110, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(191, 164, 110, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(191, 164, 110, 0);
+            }
+        }
+
+        /* المحتوى الرئيسي */
+        .main-content {
+            padding: 2rem 0;
+        }
+
+        .booking-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        @media (max-width: 992px) {
+            .booking-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* تقدم الحجز */
+        .booking-progress {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2rem;
+        }
+
+        body.dark-mode .booking-progress {
+            background-color: var(--dark-card);
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            margin: 1.5rem 0;
+        }
+
+        .progress-steps::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: var(--light-gray);
+            transform: translateY(-50%);
+            z-index: 1;
+        }
+
+        body.dark-mode .progress-steps::before {
+            background-color: var(--dark-border);
+        }
+
+        .progress-bar {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            height: 2px;
+            background-color: var(--primary-color);
+            transform: translateY(-50%);
+            z-index: 2;
+            transition: var(--transition);
+        }
+
+        .step {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background-color: white;
+            border: 2px solid var(--light-gray);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            position: relative;
+            z-index: 3;
+            transition: var(--transition);
+        }
+
+        body.dark-mode .step {
+            background-color: var(--dark-card);
+            border-color: var(--dark-border);
+            color: var(--dark-text);
+        }
+
+        .step.active {
+            border-color: var(--primary-color);
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .step.completed {
+            border-color: var(--success-color);
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .step-label {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            color: var(--text-light);
+        }
+
+        .step.active .step-label {
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        body.dark-mode .step.active .step-label {
+            color: var(--primary-color);
+        }
+
+        .step.completed .step-label {
+            color: var(--success-color);
+        }
+
+        /* نموذج الحجز */
+        .booking-form {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            box-shadow: var(--box-shadow);
+        }
+
+        body.dark-mode .booking-form {
+            background-color: var(--dark-card);
+        }
+
+        .form-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: var(--secondary-color);
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+
+        body.dark-mode .form-title {
+            color: var(--dark-text);
+        }
+
+        .form-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 60px;
+            height: 3px;
+            background-color: var(--primary-color);
+        }
+
+        .form-section {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        body.dark-mode .form-section {
+            border-color: var(--dark-border);
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: var(--secondary-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        body.dark-mode .section-title {
+            color: var(--dark-text);
+        }
+
+        .section-title i {
+            color: var(--primary-color);
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        body.dark-mode .form-group label {
+            color: var(--dark-text);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1px solid var(--light-gray);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        body.dark-mode .form-control {
+            background-color: var(--dark-card);
+            color: var(--dark-text);
+            border-color: var(--dark-border);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(191, 164, 110, 0.2);
+        }
+
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23bfa46e' viewBox='0 0 16 16'%3E%3Cpath d='M8 12L2 6h12L8 12z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: left 1rem center;
+            padding-left: 2.5rem;
+        }
+
+        .date-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        @media (max-width: 576px) {
+            .date-inputs {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* خيارات مشوار واحد */
+        .trip-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .time-input {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .time-input .form-control {
+            flex: 1;
+        }
+
+        /* اختيار السيارة */
+        .car-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .car-option {
+            border: 2px solid var(--light-gray);
+            border-radius: var(--border-radius);
+            padding: 1.2rem;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        body.dark-mode .car-option {
+            border-color: var(--dark-border);
+        }
+
+        .car-option:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-3px);
+            box-shadow: var(--box-shadow);
+        }
+
+        .car-option.selected {
+            border-color: var(--primary-color);
+            background-color: rgba(191, 164, 110, 0.1);
+        }
+
+        body.dark-mode .car-option.selected {
+            background-color: rgba(191, 164, 110, 0.2);
+        }
+
+        .car-logo {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            margin-bottom: 0.8rem;
+            background-color: white;
+            padding: 5px;
+            border-radius: 8px;
+        }
+
+        body.dark-mode .car-logo {
+            background-color: var(--dark-card);
+        }
+
+        .car-name {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--secondary-color);
+        }
+
+        body.dark-mode .car-name {
+            color: var(--dark-text);
+        }
+
+        .car-desc {
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+
+        /* ملخص الحجز */
+        .booking-summary {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            box-shadow: var(--box-shadow);
+            align-self: start;
+            position: sticky;
+            top: 2rem;
+        }
+
+        body.dark-mode .booking-summary {
+            background-color: var(--dark-card);
+        }
+
+        .summary-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--secondary-color);
+            border-bottom: 2px solid var(--light-gray);
+            padding-bottom: 0.8rem;
+        }
+
+        body.dark-mode .summary-title {
+            color: var(--dark-text);
+            border-color: var(--dark-border);
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.8rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        body.dark-mode .summary-item {
+            border-color: var(--dark-border);
+        }
+
+        .summary-label {
+            color: var(--text-light);
+        }
+
+        .summary-value {
+            font-weight: 500;
+            text-align: left;
+        }
+
+        body.dark-mode .summary-value {
+            color: var(--dark-text);
+        }
+
+        .summary-note {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background-color: rgba(191, 164, 110, 0.1);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        body.dark-mode .summary-note {
+            background-color: rgba(191, 164, 110, 0.2);
+        }
+
+        /* أزرار التحكم */
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-secondary {
+            background-color: white;
+            color: var(--text-color);
+            border: 1px solid var(--light-gray);
+        }
+
+        body.dark-mode .btn-secondary {
+            background-color: var(--dark-card);
+            color: var(--dark-text);
+            border-color: var(--dark-border);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--light-gray);
+        }
+
+        body.dark-mode .btn-secondary:hover {
+            background-color: var(--dark-border);
+        }
+
+        .btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .btn:disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* قسم المميزات */
+        .features-section {
+            padding: 3rem 0;
+            background-color: white;
+        }
+
+        body.dark-mode .features-section {
+            background-color: var(--dark-bg);
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .section-heading {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem;
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
+        }
+
+        body.dark-mode .section-heading {
+            color: var(--dark-text);
+        }
+
+        .section-subheading {
+            color: var(--text-light);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            text-align: center;
+            padding: 2rem 1.5rem;
+            border-radius: var(--border-radius);
+            background-color: var(--light-bg);
+            transition: var(--transition);
+        }
+
+        body.dark-mode .feature-card {
+            background-color: var(--dark-card);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--box-shadow);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1.2rem;
+        }
+
+        .feature-title {
+            font-size: 1.2rem;
+            margin-bottom: 0.8rem;
+            color: var(--secondary-color);
+        }
+
+        body.dark-mode .feature-title {
+            color: var(--dark-text);
+        }
+
+        .feature-desc {
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+
+        /* التذييل */
+        footer {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 3rem 0 2rem;
+            text-align: center;
+        }
+
+        .footer-logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .footer-contact {
+            margin: 1.5rem 0;
+        }
+
+        .footer-contact a {
+            color: white;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0 0.5rem;
+            transition: var(--transition);
+        }
+
+        .footer-contact a:hover {
+            color: var(--primary-color);
+        }
+
+        .copyright {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* رسائل التنبيه */
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .alert-info {
+            background-color: #e6f2ff;
+            color: #0066cc;
+            border-left: 4px solid #0066cc;
+        }
+
+        .alert i {
+            font-size: 1.2rem;
+        }
+
+        /* تأثيرات للعناصر المخفية */
+        .form-step {
+            display: none;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .form-step.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* إخفاء العناصر الخاصة بمشوار واحد بشكل افتراضي */
+        #single-trip-details {
+            display: none;
+        }
+
+        /* وقت الالتقاء لجميع أنواع الحجوزات */
+        #meeting-time-container {
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- ترويسة الصفحة -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div>
+                    <div class="logo">وصلة</div>
+                    <p class="tagline">احجز سيارتك الخاصة بسائق في مصر - خدمة فاخرة للسياحة والعمل</p>
+                </div>
+                <div class="header-controls">
+                    <div class="language-selector">
+                        <button class="language-btn">
+                            <i class="fas fa-globe"></i>
+                            <span>العربية</span>
+                        </button>
+                        <div class="language-options">
+                            <div class="language-option" data-lang="ar">العربية</div>
+                            <div class="language-option" data-lang="en">English</div>
+                        </div>
+                    </div>
+                    <button class="control-btn" id="theme-toggle">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- زر الاتصال العائم -->
+    <a href="tel:01102255320" class="floating-call-btn">
+        <i class="fas fa-phone"></i>
+    </a>
+
+    <!-- المحتوى الرئيسي -->
+    <main class="main-content">
+        <div class="container">
+            <!-- تقدم الحجز -->
+            <div class="booking-progress">
+                <h2 class="form-title">تقدم حجزك</h2>
+                <div class="progress-steps">
+                    <div class="progress-bar" style="width: 0%;"></div>
+                    <div class="step active" data-step="1">
+                        1
+                        <span class="step-label">اختيار السيارة</span>
+                    </div>
+                    <div class="step" data-step="2">
+                        2
+                        <span class="step-label">نوع الطلب</span>
+                    </div>
+                    <div class="step" data-step="3">
+                        3
+                        <span class="step-label">التواريخ</span>
+                    </div>
+                    <div class="step" data-step="4">
+                        4
+                        <span class="step-label">التفاصيل</span>
+                    </div>
+                    <div class="step" data-step="5">
+                        5
+                        <span class="step-label">التأكيد</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="booking-container">
+                <!-- نموذج الحجز -->
+                <div class="booking-form">
+                    <h2 class="form-title">تفاصيل الحجز</h2>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <span>املأ التفاصيل بالترتيب وسنقوم بتأكيد حجزك خلال دقائق</span>
+                    </div>
+
+                    <!-- الخطوة 1: اختيار السيارة -->
+                    <div class="form-step active" id="step-1">
+                        <h3 class="section-title"><i class="fas fa-car"></i> اختر نوع السيارة</h3>
+                        <div class="form-group">
+                            <label for="car-search">ابحث عن سيارة</label>
+                            <input type="text" id="car-search" class="form-control" placeholder="اكتب اسم السيارة أو النوع">
+                        </div>
+                        <div class="car-options" id="car-options-container">
+                            <!-- سيتم ملء خيارات السيارات عبر JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- الخطوة 2: نوع الطلب -->
+                    <div class="form-step" id="step-2">
+                        <h3 class="section-title"><i class="fas fa-list-alt"></i> اختر نوع الطلب</h3>
+                        <div class="form-group">
+                            <label for="request-type">نوع الخدمة</label>
+                            <select id="request-type" class="form-control">
+                                <option value="">-- اختر نوع الطلب --</option>
+                                <option value="single-trip">مشوار واحد فقط</option>
+                                <option value="full-day">يوم كامل</option>
+                                <option value="multiple-days">عدة أيام</option>
+                            </select>
+                        </div>
+
+                        <!-- تفاصيل مشوار واحد -->
+                        <div id="single-trip-details">
+                            <div class="form-group">
+                                <label for="from-location">من</label>
+                                <input type="text" id="from-location" class="form-control" placeholder="مكان الانطلاق">
+                            </div>
+                            <div class="form-group">
+                                <label for="to-location">إلى</label>
+                                <input type="text" id="to-location" class="form-control" placeholder="مكان الوصول">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- الخطوة 3: التواريخ -->
+                    <div class="form-step" id="step-3">
+                        <h3 class="section-title"><i class="fas fa-calendar-alt"></i> حدد تواريخ الحجز</h3>
+                        <div class="date-inputs">
+                            <div class="form-group">
+                                <label for="start-date">تاريخ بداية الحجز</label>
+                                <input type="date" id="start-date" class="form-control">
+                            </div>
+                            <div class="form-group" id="end-date-container">
+                                <label for="end-date">تاريخ نهاية الحجز</label>
+                                <input type="date" id="end-date" class="form-control">
+                            </div>
+                        </div>
+                        
+                        <!-- وقت الالتقاء لجميع أنواع الحجوزات -->
+                        <div id="meeting-time-container">
+                            <div class="form-group">
+                                <label for="meeting-time">وقت الالتقاء</label>
+                                <div class="time-input">
+                                    <input type="time" id="meeting-time" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- الخطوة 4: التفاصيل الإضافية -->
+                    <div class="form-step" id="step-4">
+                        <h3 class="section-title"><i class="fas fa-info-circle"></i> التفاصيل الإضافية</h3>
+                        <div class="form-group">
+                            <label for="range">نطاق الرحلة</label>
+                            <select id="range" class="form-control">
+                                <option value="inside-cairo">داخل القاهرة فقط</option>
+                                <option value="outside-cairo">داخل وخارج القاهرة</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="additional-details">أي تفاصيل إضافية تود إضافتها؟</label>
+                            <textarea id="additional-details" class="form-control" rows="4" placeholder="مثال: مشوار من المطار إلى الأهرامات، 3 ركاب، وصول الساعة 10 صباحاً، أو أي تفاصيل أخرى"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- الخطوة 5: التأكيد -->
+                    <div class="form-step" id="step-5">
+                        <h3 class="section-title"><i class="fas fa-check-circle"></i> تأكيد الحجز</h3>
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i>
+                            <span>شكراً لك! يرجى مراجعة المعلومات أدناه والتأكيد لإكمال الحجز</span>
+                        </div>
+                        <div class="summary-confirm">
+                            <div class="summary-item">
+                                <span class="summary-label">السيارة المختارة:</span>
+                                <span class="summary-value" id="confirm-car">لم يتم التحديد</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">نوع الطلب:</span>
+                                <span class="summary-value" id="confirm-service-type">لم يتم التحديد</span>
+                            </div>
+                            <div id="confirm-single-trip-details">
+                                <div class="summary-item">
+                                    <span class="summary-label">من:</span>
+                                    <span class="summary-value" id="confirm-from-location">-</span>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="summary-label">إلى:</span>
+                                    <span class="summary-value" id="confirm-to-location">-</span>
+                                </div>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">فترة الحجز:</span>
+                                <span class="summary-value" id="confirm-dates">لم يتم التحديد</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">وقت الالتقاء:</span>
+                                <span class="summary-value" id="confirm-meeting-time">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">نطاق الرحلة:</span>
+                                <span class="summary-value" id="confirm-range">لم يتم التحديد</span>
+                            </div>
+                            <div class="summary-item" id="confirm-details-container">
+                                <span class="summary-label">التفاصيل الإضافية:</span>
+                                <span class="summary-value" id="confirm-details">لا يوجد</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- أزرار التحكم -->
+                    <div class="form-actions">
+                        <button id="prev-btn" class="btn btn-secondary" style="display: none;">
+                            <i class="fas fa-arrow-right"></i> السابق
+                        </button>
+                        <button id="next-btn" class="btn btn-primary">
+                            التالي <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <button id="submit-btn" class="btn btn-primary" style="display: none;">
+                            <i class="fas fa-check"></i> تأكيد الحجز
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ملخص الحجز -->
+                <div class="booking-summary">
+                    <h2 class="summary-title">ملخص الحجز</h2>
+                    <div class="summary-item">
+                        <span class="summary-label">السيارة:</span>
+                        <span class="summary-value" id="summary-car">لم يتم التحديد</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">نوع الطلب:</span>
+                        <span class="summary-value" id="summary-service-type">لم يتم التحديد</span>
+                    </div>
+                    <div id="summary-single-trip-details">
+                        <div class="summary-item">
+                            <span class="summary-label">من:</span>
+                            <span class="summary-value" id="summary-from-location">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">إلى:</span>
+                            <span class="summary-value" id="summary-to-location">-</span>
+                        </div>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">التواريخ:</span>
+                        <span class="summary-value" id="summary-dates">لم يتم التحديد</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">وقت الالتقاء:</span>
+                        <span class="summary-value" id="summary-meeting-time">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">نطاق الرحلة:</span>
+                        <span class="summary-value" id="summary-range">لم يتم التحديد</span>
+                    </div>
+                    <div class="summary-note">
+                        <i class="fas fa-info-circle"></i> سنقوم بالتواصل معك لتأكيد التفاصيل النهائية وتزويدك بالسعر المناسب لاحتياجاتك.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- قسم المميزات -->
+    <section class="features-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-heading">لماذا تختار وصلة؟</h2>
+                <p class="section-subheading">نحن نقدم خدمة سيارات خاصة بسائق في مصر مع أفضل المعايير والجودة</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h3 class="feature-title">حجز سهل وسريع</h3>
+                    <p class="feature-desc">عملية حجز مبسطة توفر لك الوقت والجهد مع تأكيد فوري</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <h3 class="feature-title">سائقون محترفون</h3>
+                    <p class="feature-desc">سائقون بخبرة عالية ومعرفة تامة بالطرق والأماكن</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3 class="feature-title">آمن وموثوق</h3>
+                    <p class="feature-desc">سيارات مجهزة ومصانة بشكل دوري لتضمن رحلة آمنة</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- التذييل -->
+    <footer>
+        <div class="container">
+            <div class="footer-logo">وصلة</div>
+            <p>خدمة حجز سيارات خاصة بسائق في مصر للسياحة والعمل وأي غرض آخر</p>
+            <div class="footer-contact">
+                <a href="https://wa.me/201102255320" target="_blank">
+                    <i class="fab fa-whatsapp"></i> واتساب
+                </a>
+                <a href="mailto:info@wasla.com">
+                    <i class="fas fa-envelope"></i> البريد الإلكتروني
+                </a>
+            </div>
+            <div class="copyright">
+                © 2023 وصلة. جميع الحقوق محفوظة.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // نظام الترجمة
+        const translations = {
+            ar: {
+                // النصوص العربية
+                title: "وصلة - احجز سيارتك الخاصة في مصر",
+                tagline: "احجز سيارتك الخاصة بسائق في مصر - خدمة فاخرة للسياحة والعمل",
+                bookingProgress: "تقدم حجزك",
+                bookingDetails: "تفاصيل الحجز",
+                infoMessage: "املأ التفاصيل بالترتيب وسنقوم بتأكيد حجزك خلال دقائق",
+                step1: "اختيار السيارة",
+                step2: "نوع الطلب",
+                step3: "التواريخ",
+                step4: "التفاصيل",
+                step5: "التأكيد",
+                carSearch: "ابحث عن سيارة",
+                carSearchPlaceholder: "اكتب اسم السيارة أو النوع",
+                serviceType: "نوع الخدمة",
+                selectServiceType: "-- اختر نوع الطلب --",
+                singleTrip: "مشوار واحد فقط",
+                fullDay: "يوم كامل",
+                multipleDays: "عدة أيام",
+                from: "من",
+                fromPlaceholder: "مكان الانطلاق",
+                to: "إلى",
+                toPlaceholder: "مكان الوصول",
+                startDate: "تاريخ بداية الحجز",
+                endDate: "تاريخ نهاية الحجز",
+                meetingTime: "وقت الالتقاء",
+                range: "نطاق الرحلة",
+                insideCairo: "داخل القاهرة فقط",
+                outsideCairo: "داخل وخارج القاهرة",
+                additionalDetails: "أي تفاصيل إضافية تود إضافتها؟",
+                additionalDetailsPlaceholder: "مثال: مشوار من المطار إلى الأهرامات، 3 ركاب، وصول الساعة 10 صباحاً، أو أي تفاصيل أخرى",
+                confirmationTitle: "تأكيد الحجز",
+                confirmationMessage: "شكراً لك! يرجى مراجعة المعلومات أدناه والتأكيد لإكمال الحجز",
+                car: "السيارة المختارة",
+                serviceTypeSummary: "نوع الطلب",
+                fromSummary: "من",
+                toSummary: "إلى",
+                dates: "فترة الحجز",
+                meetingTimeSummary: "وقت الالتقاء",
+                rangeSummary: "نطاق الرحلة",
+                additionalDetailsSummary: "التفاصيل الإضافية",
+                notSpecified: "لم يتم التحديد",
+                none: "لا يوجد",
+                dash: "-",
+                previous: "السابق",
+                next: "التالي",
+                confirm: "تأكيد الحجز",
+                summaryTitle: "ملخص الحجز",
+                summaryNote: "سنقوم بالتواصل معك لتأكيد التفاصيل النهائية وتزويدك بالسعر المناسب لاحتياجاتك.",
+                featuresTitle: "لماذا تختار وصلة؟",
+                featuresSubtitle: "نحن نقدم خدمة سيارات خاصة بسائق في مصر مع أفضل المعايير والجودة",
+                feature1Title: "حجز سهل وسريع",
+                feature1Desc: "عملية حجز مبسطة توفر لك الوقت والجهد مع تأكيد فوري",
+                feature2Title: "سائقون محترفون",
+                feature2Desc: "سائقون بخبرة عالية ومعرفة تامة بالطرق والأماكن",
+                feature3Title: "آمن وموثوق",
+                feature3Desc: "سيارات مجهزة ومصانة بشكل دوري لتضمن رحلة آمنة",
+                footerText: "خدمة حجز سيارات خاصة بسائق في مصر للسياحة والعمل وأي غرض آخر",
+                copyright: "© 2023 وصلة. جميع الحقوق محفوظة.",
+                chooseCar: "يرجى اختيار سيارة",
+                chooseServiceType: "يرجى اختيار نوع الخدمة",
+                specifyFrom: "يرجى تحديد مكان الانطلاق",
+                specifyTo: "يرجى تحديد مكان الوصول",
+                specifyMeetingTime: "يرجى تحديد وقت الالتقاء",
+                specifyStartDate: "يرجى تحديد تاريخ البداية",
+                specifyEndDate: "يرجى تحديد تاريخ النهاية"
+            },
+            en: {
+                // English texts
+                title: "Wasla - Book Your Private Car in Egypt",
+                tagline: "Book your private car with driver in Egypt - Premium service for tourism and work",
+                bookingProgress: "Booking Progress",
+                bookingDetails: "Booking Details",
+                infoMessage: "Fill in the details in order and we will confirm your booking within minutes",
+                step1: "Choose Car",
+                step2: "Request Type",
+                step3: "Dates",
+                step4: "Details",
+                step5: "Confirmation",
+                carSearch: "Search for a car",
+                carSearchPlaceholder: "Type car name or type",
+                serviceType: "Service Type",
+                selectServiceType: "-- Select Request Type --",
+                singleTrip: "Single trip only",
+                fullDay: "Full day",
+                multipleDays: "Multiple days",
+                from: "From",
+                fromPlaceholder: "Pickup location",
+                to: "To",
+                toPlaceholder: "Drop-off location",
+                startDate: "Booking start date",
+                endDate: "Booking end date",
+                meetingTime: "Meeting time",
+                range: "Trip range",
+                insideCairo: "Inside Cairo only",
+                outsideCairo: "Inside and outside Cairo",
+                additionalDetails: "Any additional details you would like to add?",
+                additionalDetailsPlaceholder: "Example: Trip from airport to pyramids, 3 passengers, arrival at 10 AM, or any other details",
+                confirmationTitle: "Booking Confirmation",
+                confirmationMessage: "Thank you! Please review the information below and confirm to complete your booking",
+                car: "Selected Car",
+                serviceTypeSummary: "Request Type",
+                fromSummary: "From",
+                toSummary: "To",
+                dates: "Booking Period",
+                meetingTimeSummary: "Meeting Time",
+                rangeSummary: "Trip Range",
+                additionalDetailsSummary: "Additional Details",
+                notSpecified: "Not specified",
+                none: "None",
+                dash: "-",
+                previous: "Previous",
+                next: "Next",
+                confirm: "Confirm Booking",
+                summaryTitle: "Booking Summary",
+                summaryNote: "We will contact you to confirm the final details and provide you with the appropriate price for your needs.",
+                featuresTitle: "Why Choose Wasla?",
+                featuresSubtitle: "We provide private car with driver service in Egypt with the best standards and quality",
+                feature1Title: "Easy and Fast Booking",
+                feature1Desc: "Simplified booking process saves you time and effort with instant confirmation",
+                feature2Title: "Professional Drivers",
+                feature2Desc: "Drivers with high experience and full knowledge of roads and places",
+                feature3Title: "Safe and Reliable",
+                feature3Desc: "Equipped and regularly maintained cars to ensure a safe trip",
+                footerText: "Private car with driver service in Egypt for tourism, work and any other purpose",
+                copyright: "© 2023 Wasla. All rights reserved.",
+                chooseCar: "Please choose a car",
+                chooseServiceType: "Please select service type",
+                specifyFrom: "Please specify pickup location",
+                specifyTo: "Please specify drop-off location",
+                specifyMeetingTime: "Please specify meeting time",
+                specifyStartDate: "Please specify start date",
+                specifyEndDate: "Please specify end date"
+            }
+        };
+
+        // بيانات السيارات مع الشعارات
+        const carData = [
+            { 
+                name: 'تويوتا كورولا', 
+                nameEn: 'Toyota Corolla',
+                desc: 'سيارة اقتصادية وموثوقة للاستخدام اليومي.', 
+                descEn: 'Economical and reliable car for daily use.',
+                logo: 'https://cdn.worldvectorlogo.com/logos/toyota-1.svg'
+            },
+            { 
+                name: 'هيونداي إلنترا', 
+                nameEn: 'Hyundai Elantra',
+                desc: 'تصميم عصري مع أداء جيد.', 
+                descEn: 'Modern design with good performance.',
+                logo: 'https://cdn.worldvectorlogo.com/logos/hyundai-1.svg'
+            },
+            { 
+                name: 'كيا سبورتاج', 
+                nameEn: 'Kia Sportage',
+                desc: 'SUV عملي للعائلات.', 
+                descEn: 'Practical SUV for families.',
+                logo: 'https://cdn.worldvectorlogo.com/logos/kia-6.svg'
+            },
+            { 
+                name: 'نيسان صني', 
+                nameEn: 'Nissan Sunny',
+                desc: 'سيارة بسيطة واقتصادية في الوقود.', 
+                descEn: 'Simple and fuel-efficient car.',
+                logo: 'https://cdn.worldvectorlogo.com/logos/nissan-1.svg'
+            },
+            { 
+                name: 'مرسيدس C-Class', 
+                nameEn: 'Mercedes C-Class',
+                desc: 'فخامة مدمجة مع تقنيات حديثة.', 
+                descEn: 'Compact luxury with modern technology.',
+                logo: 'https://cdn.worldvectorlogo.com/logos/mercedes-benz-1.svg'
+            },
+            { 
+                name: 'مرسيدس E-Class', 
+                nameEn: 'Mercedes E-Class',
+                desc: 'توازن مثالي بين الفخامة والأداء.', 
+                descEn: 'Perfect balance between luxury and performance.',
+                logo: 'https://cdn.worldvectorlogo.com/logos/mercedes-benz-1.svg'
+            },
+            { 
+                name: 'BMW 5 Series', 
+                nameEn: 'BMW 5 Series',
+                desc: 'أناقة رياضية وتكنولوجيا متقدمة.', 
+                descEn: 'Sporty elegance and advanced technology.',
+                logo: 'https://cdn.worldvectorlogo.com/logos/bmw-2.svg'
+            },
+            { 
+                name: 'تويوتا لاند كروزر', 
+                nameEn: 'Toyota Land Cruiser',
+                desc: 'SUV قوي للطرق الوعرة.', 
+                descEn: 'Powerful SUV for off-road.',
+                logo: 'https://cdn.worldvectorlogo.com/logos/toyota-1.svg'
+            },
+            { 
+                name: 'تويوتا هايس', 
+                nameEn: 'Toyota Hiace',
+                desc: 'حل مثالي للرحلات الجماعية.', 
+                descEn: 'Ideal solution for group trips.',
+                logo: 'https://cdn.worldvectorlogo.com/logos/toyota-1.svg'
+            },
+            { 
+                name: 'رينج روفر', 
+                nameEn: 'Range Rover',
+                desc: 'فخامة بريطانية للطرق الوعرة.', 
+                descEn: 'British luxury for off-road.',
+                logo: 'https://cdn.worldvectorlogo.com/logos/land-rover-2.svg'
+            },
+            { 
+                name: 'لكزس RX', 
+                nameEn: 'Lexus RX',
+                desc: 'SUV فاخرة مع راحة عالية.', 
+                descEn: 'Luxury SUV with high comfort.',
+                logo: 'https://cdn.worldvectorlogo.com/logos/lexus-1.svg'
+            },
+            { 
+                name: 'فولكس فاجن جولف', 
+                nameEn: 'Volkswagen Golf',
+                desc: 'هاتشباك رياضية ومريحة.', 
+                descEn: 'Sporty and comfortable hatchback.',
+                logo: 'https://cdn.worldvectorlogo.com/logos/volkswagen-9.svg'
+            }
+        ];
+
+        // حالة التطبيق
+        let currentLanguage = 'ar';
+        let currentStep = 1;
+        let selectedCar = null;
+
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            // تعيين تاريخ اليوم كحد أدنى
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('start-date').min = today;
+            document.getElementById('end-date').min = today;
+            
+            // تعبئة خيارات السيارات
+            renderCars(carData);
+            
+            // تحديث الخطوات
+            updateSteps();
+            
+            // إضافة مستمعي الأحداث
+            addEventListeners();
+            
+            // إخفاء تفاصيل مشوار واحد بشكل افتراضي
+            document.getElementById('summary-single-trip-details').style.display = 'none';
+            document.getElementById('confirm-single-trip-details').style.display = 'none';
+            
+            // تحميل الترجمة الحالية
+            updatePageLanguage();
+        });
+
+        // تحديث لغة الصفحة
+        function updatePageLanguage() {
+            const t = translations[currentLanguage];
+            
+            // تحديث النصوص الأساسية
+            document.title = t.title;
+            document.querySelector('.tagline').textContent = t.tagline;
+            document.querySelector('.form-title').textContent = t.bookingDetails;
+            document.querySelector('.alert-info span').textContent = t.infoMessage;
+            document.querySelector('.summary-title').textContent = t.summaryTitle;
+            document.querySelector('.section-heading').textContent = t.featuresTitle;
+            document.querySelector('.section-subheading').textContent = t.featuresSubtitle;
+            document.querySelector('footer p').textContent = t.footerText;
+            document.querySelector('.copyright').textContent = t.copyright;
+            
+            // تحديث نصوص الخطوات
+            document.querySelector('[data-step="1"] .step-label').textContent = t.step1;
+            document.querySelector('[data-step="2"] .step-label').textContent = t.step2;
+            document.querySelector('[data-step="3"] .step-label').textContent = t.step3;
+            document.querySelector('[data-step="4"] .step-label').textContent = t.step4;
+            document.querySelector('[data-step="5"] .step-label').textContent = t.step5;
+            
+            // تحديث نصوص النموذج
+            document.querySelector('label[for="car-search"]').textContent = t.carSearch;
+            document.getElementById('car-search').placeholder = t.carSearchPlaceholder;
+            document.querySelector('label[for="request-type"]').textContent = t.serviceType;
+            document.querySelector('label[for="from-location"]').textContent = t.from;
+            document.getElementById('from-location').placeholder = t.fromPlaceholder;
+            document.querySelector('label[for="to-location"]').textContent = t.to;
+            document.getElementById('to-location').placeholder = t.toPlaceholder;
+            document.querySelector('label[for="start-date"]').textContent = t.startDate;
+            document.querySelector('label[for="end-date"]').textContent = t.endDate;
+            document.querySelector('label[for="meeting-time"]').textContent = t.meetingTime;
+            document.querySelector('label[for="range"]').textContent = t.range;
+            document.querySelector('label[for="additional-details"]').textContent = t.additionalDetails;
+            document.getElementById('additional-details').placeholder = t.additionalDetailsPlaceholder;
+            
+            // تحديث نصوص التأكيد
+            document.querySelector('#step-5 .section-title').textContent = t.confirmationTitle;
+            document.querySelector('#step-5 .alert-success span').textContent = t.confirmationMessage;
+            
+            // تحديث نصوص الملخص
+            document.querySelectorAll('.summary-label')[0].textContent = t.car + ":";
+            document.querySelectorAll('.summary-label')[1].textContent = t.serviceTypeSummary + ":";
+            document.querySelectorAll('.summary-label')[2].textContent = t.fromSummary + ":";
+            document.querySelectorAll('.summary-label')[3].textContent = t.toSummary + ":";
+            document.querySelectorAll('.summary-label')[4].textContent = t.dates + ":";
+            document.querySelectorAll('.summary-label')[5].textContent = t.meetingTimeSummary + ":";
+            document.querySelectorAll('.summary-label')[6].textContent = t.rangeSummary + ":";
+            document.querySelectorAll('.summary-label')[7].textContent = t.additionalDetailsSummary + ":";
+            
+            // تحديث نصوص الأزرار
+            document.getElementById('prev-btn').innerHTML = `<i class="fas fa-arrow-right"></i> ${t.previous}`;
+            document.getElementById('next-btn').innerHTML = `${t.next} <i class="fas fa-arrow-left"></i>`;
+            document.getElementById('submit-btn').innerHTML = `<i class="fas fa-check"></i> ${t.confirm}`;
+            
+            // تحديث نصوص المميزات
+            const featureTitles = document.querySelectorAll('.feature-title');
+            const featureDescs = document.querySelectorAll('.feature-desc');
+            
+            featureTitles[0].textContent = t.feature1Title;
+            featureTitles[1].textContent = t.feature2Title;
+            featureTitles[2].textContent = t.feature3Title;
+            
+            featureDescs[0].textContent = t.feature1Desc;
+            featureDescs[1].textContent = t.feature2Desc;
+            featureDescs[2].textContent = t.feature3Desc;
+            
+            // تحديث قائمة الاختيار
+            document.getElementById('request-type').options[0].text = t.selectServiceType;
+            document.getElementById('request-type').options[1].text = t.singleTrip;
+            document.getElementById('request-type').options[2].text = t.fullDay;
+            document.getElementById('request-type').options[3].text = t.multipleDays;
+            
+            document.getElementById('range').options[0].text = t.insideCairo;
+            document.getElementById('range').options[1].text = t.outsideCairo;
+            
+            // إعادة تعبئة السيارات مع الترجمة المناسبة
+            renderCars(carData);
+            
+            // تحديث الملخص
+            updateSummary();
+        }
+
+        // إضافة مستمعي الأحداث
+        function addEventListeners() {
+            // البحث عن السيارات
+            document.getElementById('car-search').addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const filteredCars = carData.filter(car => {
+                    const name = currentLanguage === 'ar' ? car.name : car.nameEn;
+                    const desc = currentLanguage === 'ar' ? car.desc : car.descEn;
+                    return name.toLowerCase().includes(searchTerm) || desc.toLowerCase().includes(searchTerm);
+                });
+                renderCars(filteredCars);
+            });
+
+            // تغيير نوع الطلب
+            document.getElementById('request-type').addEventListener('change', function() {
+                if (this.value === 'multiple-days') {
+                    document.getElementById('end-date-container').style.display = 'block';
+                } else {
+                    document.getElementById('end-date-container').style.display = 'none';
+                    document.getElementById('end-date').value = '';
+                }
+                
+                // إظهار أو إخفاء تفاصيل مشوار واحد
+                if (this.value === 'single-trip') {
+                    document.getElementById('single-trip-details').style.display = 'block';
+                    document.getElementById('summary-single-trip-details').style.display = 'block';
+                    document.getElementById('confirm-single-trip-details').style.display = 'block';
+                } else {
+                    document.getElementById('single-trip-details').style.display = 'none';
+                    document.getElementById('summary-single-trip-details').style.display = 'none';
+                    document.getElementById('confirm-single-trip-details').style.display = 'none';
+                }
+                
+                updateSummary();
+            });
+
+            // تحديث الملخص عند تغيير القيم
+            document.getElementById('start-date').addEventListener('change', updateSummary);
+            document.getElementById('end-date').addEventListener('change', updateSummary);
+            document.getElementById('range').addEventListener('change', updateSummary);
+            document.getElementById('additional-details').addEventListener('input', updateSummary);
+            document.getElementById('from-location').addEventListener('input', updateSummary);
+            document.getElementById('to-location').addEventListener('input', updateSummary);
+            document.getElementById('meeting-time').addEventListener('input', updateSummary);
+
+            // أزرار التنقل
+            document.getElementById('next-btn').addEventListener('click', function() {
+                if (validateStep(currentStep)) {
+                    currentStep++;
+                    updateSteps();
+                }
+            });
+
+            document.getElementById('prev-btn').addEventListener('click', function() {
+                currentStep--;
+                updateSteps();
+            });
+
+            // زر التأكيد النهائي
+            document.getElementById('submit-btn').addEventListener('click', function() {
+                sendBooking();
+            });
+
+            // مبدل اللغة
+            const languageBtn = document.querySelector('.language-btn');
+            const languageOptions = document.querySelector('.language-options');
+            
+            languageBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                languageOptions.classList.toggle('show');
+            });
+            
+            document.querySelectorAll('.language-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    const lang = this.getAttribute('data-lang');
+                    changeLanguage(lang);
+                    languageOptions.classList.remove('show');
+                });
+            });
+            
+            // إغلاق قائمة اللغة عند النقر خارجها
+            document.addEventListener('click', function(e) {
+                if (!languageBtn.contains(e.target) && !languageOptions.contains(e.target)) {
+                    languageOptions.classList.remove('show');
+                }
+            });
+            
+            // مبدل الوضع الداكن
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeIcon = themeToggle.querySelector('i');
+            
+            // التحقق من التفضيل المحفوظ
+            if (localStorage.getItem('darkMode') === 'enabled') {
+                document.body.classList.add('dark-mode');
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+            }
+            
+            themeToggle.addEventListener('click', function() {
+                document.body.classList.toggle('dark-mode');
+                
+                if (document.body.classList.contains('dark-mode')) {
+                    localStorage.setItem('darkMode', 'enabled');
+                    themeIcon.classList.remove('fa-moon');
+                    themeIcon.classList.add('fa-sun');
+                } else {
+                    localStorage.setItem('darkMode', 'disabled');
+                    themeIcon.classList.remove('fa-sun');
+                    themeIcon.classList.add('fa-moon');
+                }
+            });
+        }
+
+        // تغيير اللغة
+        function changeLanguage(lang) {
+            currentLanguage = lang;
+            const languageBtn = document.querySelector('.language-btn span');
+            
+            if (lang === 'en') {
+                document.dir = 'ltr';
+                document.querySelector('html').setAttribute('dir', 'ltr');
+                languageBtn.textContent = 'English';
+            } else {
+                document.dir = 'rtl';
+                document.querySelector('html').setAttribute('dir', 'rtl');
+                languageBtn.textContent = 'العربية';
+            }
+            
+            // تحديث جميع نصوص الصفحة
+            updatePageLanguage();
+        }
+
+        // عرض السيارات
+        function renderCars(cars) {
+            const carOptionsContainer = document.getElementById('car-options-container');
+            carOptionsContainer.innerHTML = '';
+            
+            cars.forEach(car => {
+                const carElement = document.createElement('div');
+                carElement.className = 'car-option';
+                
+                const name = currentLanguage === 'ar' ? car.name : car.nameEn;
+                const desc = currentLanguage === 'ar' ? car.desc : car.descEn;
+                
+                carElement.innerHTML = `
+                    <img src="${car.logo}" alt="${name}" class="car-logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2JmYTQ2ZSI+PHBhdGggZD0iTTE5IDNINGMtMS4xMSAwLTIgLjg5LTIgMnYxMmMwIDEuMS44OSAyIDIgMmgxNWMxLjEgMCAyLS45IDItMlY2YzAtMS4xMS0uOS0yLTItMnptMCA0SDRWNmgxNXY0eiIvPjxwYXRoIGQ9Ik0wIDBoMjR2MjRIMHoiIGZpbGw9Im5vbmUiLz48L3N2Zz4='">
+                    <h3 class="car-name">${name}</h3>
+                    <p class="car-desc">${desc}</p>
+                `;
+                carElement.addEventListener('click', () => selectCar(car));
+                carOptionsContainer.appendChild(carElement);
+            });
+        }
+
+        // اختيار السيارة
+        function selectCar(car) {
+            // إزالة التحديد من جميع السيارات
+            document.querySelectorAll('.car-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            // إضافة التحديد للسيارة المختارة
+            event.currentTarget.classList.add('selected');
+            
+            selectedCar = car;
+            updateSummary();
+        }
+
+        // تحديث الملخص
+        function updateSummary() {
+            const t = translations[currentLanguage];
+            
+            // تحديث السيارة
+            if (selectedCar) {
+                const carName = currentLanguage === 'ar' ? selectedCar.name : selectedCar.nameEn;
+                document.getElementById('summary-car').textContent = carName;
+                document.getElementById('confirm-car').textContent = carName;
+            } else {
+                document.getElementById('summary-car').textContent = t.notSpecified;
+                document.getElementById('confirm-car').textContent = t.notSpecified;
+            }
+            
+            // تحديث نوع الخدمة
+            const serviceTypeText = getServiceTypeText();
+            document.getElementById('summary-service-type').textContent = serviceTypeText;
+            document.getElementById('confirm-service-type').textContent = serviceTypeText;
+            
+            // تحديث تفاصيل مشوار واحد
+            if (document.getElementById('request-type').value === 'single-trip') {
+                document.getElementById('summary-from-location').textContent = document.getElementById('from-location').value || t.dash;
+                document.getElementById('summary-to-location').textContent = document.getElementById('to-location').value || t.dash;
+                
+                document.getElementById('confirm-from-location').textContent = document.getElementById('from-location').value || t.dash;
+                document.getElementById('confirm-to-location').textContent = document.getElementById('to-location').value || t.dash;
+            }
+            
+            // تحديث التواريخ
+            let datesText = getDatesText();
+            document.getElementById('summary-dates').textContent = datesText;
+            document.getElementById('confirm-dates').textContent = datesText;
+            
+            // تحديث وقت الالتقاء
+            const meetingTime = document.getElementById('meeting-time').value;
+            if (meetingTime) {
+                document.getElementById('summary-meeting-time').textContent = formatTime(meetingTime);
+                document.getElementById('confirm-meeting-time').textContent = formatTime(meetingTime);
+            } else {
+                document.getElementById('summary-meeting-time').textContent = t.dash;
+                document.getElementById('confirm-meeting-time').textContent = t.dash;
+            }
+            
+            // تحديث نطاق الرحلة
+            const rangeText = document.getElementById('range').options[document.getElementById('range').selectedIndex].text;
+            document.getElementById('summary-range').textContent = rangeText;
+            document.getElementById('confirm-range').textContent = rangeText;
+            
+            // تحديث التفاصيل الإضافية
+            const additionalDetails = document.getElementById('additional-details').value;
+            if (additionalDetails) {
+                document.getElementById('confirm-details').textContent = additionalDetails;
+                document.getElementById('confirm-details-container').style.display = 'flex';
+            } else {
+                document.getElementById('confirm-details').textContent = t.none;
+                document.getElementById('confirm-details-container').style.display = 'flex';
+            }
+        }
+
+        // الحصول على نص نوع الخدمة
+        function getServiceTypeText() {
+            const t = translations[currentLanguage];
+            const requestType = document.getElementById('request-type').value;
+            
+            if (!requestType) return t.notSpecified;
+            
+            const serviceTypes = {
+                'single-trip': t.singleTrip,
+                'full-day': t.fullDay,
+                'multiple-days': t.multipleDays
+            };
+            
+            return serviceTypes[requestType] || t.notSpecified;
+        }
+
+        // الحصول على نص الفترة
+        function getDatesText() {
+            const t = translations[currentLanguage];
+            const startDate = document.getElementById('start-date').value;
+            
+            if (!startDate) return t.notSpecified;
+            
+            const requestType = document.getElementById('request-type').value;
+            const endDate = document.getElementById('end-date').value;
+            
+            if (requestType === 'multiple-days' && endDate) {
+                return `${t.from} ${formatDate(startDate)} ${t.to} ${formatDate(endDate)}`;
+            } else {
+                return formatDate(startDate);
+            }
+        }
+
+        // تنسيق التاريخ
+        function formatDate(dateString) {
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString(currentLanguage === 'ar' ? 'ar-EG' : 'en-US', options);
+        }
+
+        // تنسيق الوقت
+        function formatTime(timeString) {
+            const [hours, minutes] = timeString.split(':');
+            if (currentLanguage === 'ar') {
+                return `${hours}:${minutes}`;
+            } else {
+                const hour = parseInt(hours);
+                const ampm = hour >= 12 ? 'PM' : 'AM';
+                const formattedHour = hour % 12 || 12;
+                return `${formattedHour}:${minutes} ${ampm}`;
+            }
+        }
+
+        // التحقق من صحة الخطوة الحالية
+        function validateStep(step) {
+            const t = translations[currentLanguage];
+            
+            switch(step) {
+                case 1:
+                    if (!selectedCar) {
+                        alert(t.chooseCar);
+                        return false;
+                    }
+                    return true;
+                case 2:
+                    if (!document.getElementById('request-type').value) {
+                        alert(t.chooseServiceType);
+                        return false;
+                    }
+                    
+                    // التحقق من تفاصيل مشوار واحد إذا كان النوع "مشوار واحد"
+                    if (document.getElementById('request-type').value === 'single-trip') {
+                        if (!document.getElementById('from-location').value) {
+                            alert(t.specifyFrom);
+                            return false;
+                        }
+                        if (!document.getElementById('to-location').value) {
+                            alert(t.specifyTo);
+                            return false;
+                        }
+                    }
+                    return true;
+                case 3:
+                    if (!document.getElementById('start-date').value) {
+                        alert(t.specifyStartDate);
+                        return false;
+                    }
+                    if (document.getElementById('request-type').value === 'multiple-days' && !document.getElementById('end-date').value) {
+                        alert(t.specifyEndDate);
+                        return false;
+                    }
+                    if (!document.getElementById('meeting-time').value) {
+                        alert(t.specifyMeetingTime);
+                        return false;
+                    }
+                    return true;
+                case 4:
+                    // لا يوجد تحقق إلزامي للتفاصيل الإضافية
+                    return true;
+                default:
+                    return true;
+            }
+        }
+
+        // تحديث واجهة الخطوات
+        function updateSteps() {
+            // إخفاء جميع الخطوات وإظهار الخطوة الحالية فقط
+            document.querySelectorAll('.form-step').forEach(step => {
+                step.classList.remove('active');
+            });
+            document.getElementById(`step-${currentStep}`).classList.add('active');
+            
+            // تحديث شريط التقدم
+            const progressPercentage = ((currentStep - 1) / (document.querySelectorAll('.form-step').length - 1)) * 100;
+            document.querySelector('.progress-bar').style.width = `${progressPercentage}%`;
+            
+            // تحديث مؤشرات الخطوات
+            document.querySelectorAll('.step').forEach(step => {
+                const stepNum = parseInt(step.getAttribute('data-step'));
+                step.classList.remove('active', 'completed');
+                
+                if (stepNum === currentStep) {
+                    step.classList.add('active');
+                } else if (stepNum < currentStep) {
+                    step.classList.add('completed');
+                }
+            });
+            
+            // إظهار/إخفاء الأزرار
+            document.getElementById('prev-btn').style.display = currentStep > 1 ? 'flex' : 'none';
+            document.getElementById('next-btn').style.display = currentStep < document.querySelectorAll('.form-step').length ? 'flex' : 'none';
+            document.getElementById('submit-btn').style.display = currentStep === document.querySelectorAll('.form-step').length ? 'flex' : 'none';
+            
+            // تحديث الملخص عند الوصول إلى الخطوة الأخيرة
+            if (currentStep === document.querySelectorAll('.form-step').length) {
+                updateSummary();
+            }
+        }
+
+        // إرسال الحجز عبر واتساب
+        function sendBooking() {
+            const t = translations[currentLanguage];
+            
+            // جمع البيانات مباشرة من عناصر الإدخال
+            const serviceTypeText = getServiceTypeText();
+            const datesText = getDatesText();
+            const rangeText = document.getElementById('range').options[document.getElementById('range').selectedIndex].text;
+            const meetingTime = document.getElementById('meeting-time').value;
+            
+            let message = `${t.bookingDetails}:\n\n`;
+            
+            message += `${t.car}: ${currentLanguage === 'ar' ? selectedCar.name : selectedCar.nameEn}\n`;
+            message += `${t.serviceTypeSummary}: ${serviceTypeText}\n`;
+            
+            // إضافة تفاصيل مشوار واحد إذا كانت مناسبة
+            if (document.getElementById('request-type').value === 'single-trip') {
+                message += `${t.fromSummary}: ${document.getElementById('from-location').value}\n`;
+                message += `${t.toSummary}: ${document.getElementById('to-location').value}\n`;
+            }
+            
+            message += `${t.dates}: ${datesText}\n`;
+            message += `${t.meetingTimeSummary}: ${formatTime(meetingTime)}\n`;
+            message += `${t.rangeSummary}: ${rangeText}\n`;
+            
+            const additionalDetails = document.getElementById('additional-details').value;
+            if (additionalDetails) {
+                message += `${t.additionalDetailsSummary}: ${additionalDetails}\n`;
+            }
+            
+            message += `\n${t.thankYou}`;
+            
+            const encodedMessage = encodeURIComponent(message);
+            window.open(`https://wa.me/201102255320?text=${encodedMessage}`, '_blank');
+        }
+    </script>
+</body>
+</html>

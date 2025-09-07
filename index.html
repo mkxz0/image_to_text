@@ -3,30 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wasla - Book Your Private Car in Egypt</title>
+    <title>وصلة - خدمات متكاملة للسياحة والسفر في مصر</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary-color: #bfa46e;
-            --primary-dark: #a38c64;
-            --secondary-color: #101010;
-            --light-bg: #f8f9fa;
-            --light-gray: #e9ecef;
-            --text-color: #333;
-            --text-light: #6c757d;
+            --primary-color: #FF7F00;
+            --primary-light: #FFA34D;
+            --primary-dark: #E67200;
+            --secondary-color: #2D2D2D;
+            --accent-blue: #0066CC;
+            --accent-green: #009688;
+            --accent-purple: #6A5ACD;
+            --light-bg: #FFF8F0;
+            --light-gray: #F5E6D8;
+            --text-color: #333333;
+            --text-light: #666666;
             --success-color: #28a745;
-            --border-radius: 12px;
-            --box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            --border-radius: 16px;
+            --box-shadow: 0 8px 25px rgba(255, 127, 0, 0.15);
             --transition: all 0.3s ease;
             
             /* Dark mode variables */
-            --dark-bg: #1a1a1a;
-            --dark-text: #f0f0f0;
-            --dark-card: #2d2d2d;
-            --dark-border: #444;
+            --dark-bg: #1E1E1E;
+            --dark-text: #F5F5F5;
+            --dark-card: #2D2D2D;
+            --dark-border: #444444;
         }
 
         /* Dark mode styles */
@@ -40,7 +44,9 @@
         body.dark-mode .booking-summary,
         body.dark-mode .feature-card,
         body.dark-mode .form-control,
-        body.dark-mode .car-option {
+        body.dark-mode .car-option,
+        body.dark-mode .service-card,
+        body.dark-mode .tab-button {
             background-color: var(--dark-card);
             color: var(--dark-text);
             border-color: var(--dark-border);
@@ -54,7 +60,7 @@
 
         body.dark-mode .form-control:focus {
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(191, 164, 110, 0.3);
+            box-shadow: 0 0 0 3px rgba(255, 127, 0, 0.3);
         }
 
         body.dark-mode .summary-item,
@@ -73,8 +79,9 @@
         }
 
         body.dark-mode .alert-info {
-            background-color: #2a4b6a;
-            border-color: #3a6ea5;
+            background-color: rgba(255, 127, 0, 0.2);
+            border-color: var(--primary-color);
+            color: var(--primary-light);
         }
 
         * {
@@ -85,7 +92,7 @@
 
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: var(--light-bg);
+            background: linear-gradient(135deg, #FFF8F0 0%, #FFEDDC 100%);
             color: var(--text-color);
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
@@ -99,14 +106,81 @@
             padding: 0 20px;
         }
 
+        /* قسم الترحيب الديناميكي */
+        .welcome-section {
+            background: linear-gradient(135deg, rgba(255, 127, 0, 0.9) 0%, rgba(45, 45, 45, 0.85) 100%), url('https://images.unsplash.com/photo-1506929562872-bb421503ef21?ixlib=rb-4.0.3&auto=format&fit=crop&w=1368&q=80');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 5rem 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border-bottom: 4px solid var(--primary-color);
+        }
+
+        .welcome-content {
+            position: relative;
+            z-index: 2;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .welcome-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            animation: fadeInUp 1s ease;
+        }
+
+        .welcome-subtitle {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            animation: fadeInUp 1s ease 0.3s forwards;
+            opacity: 0;
+        }
+
+        .welcome-cta {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: var(--transition);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            animation: fadeInUp 1s ease 0.6s forwards;
+            opacity: 0;
+        }
+
+        .welcome-cta:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-3px);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         /* ترويسة الصفحة */
         header {
-            background: linear-gradient(135deg, var(--secondary-color) 0%, #2c3e50 100%);
+            background: linear-gradient(135deg, var(--secondary-color) 0%, #3A3A3A 100%);
             color: white;
             padding: 1.5rem 0;
             text-align: center;
             border-bottom: 4px solid var(--primary-color);
             position: relative;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         .header-content {
@@ -117,15 +191,17 @@
 
         .logo {
             font-family: 'Playfair Display', serif;
-            font-size: 2.2rem;
+            font-size: 2.5rem;
             font-weight: 700;
             color: var(--primary-color);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
         }
 
         .tagline {
             font-size: 1rem;
             opacity: 0.9;
             margin-bottom: 0;
+            color: #FFF;
         }
 
         /* عناصر التحكم في الرأس */
@@ -136,7 +212,7 @@
         }
 
         .control-btn {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.15);
             border: none;
             color: white;
             width: 40px;
@@ -147,10 +223,12 @@
             justify-content: center;
             cursor: pointer;
             transition: var(--transition);
+            backdrop-filter: blur(5px);
         }
 
         .control-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.25);
+            transform: rotate(10deg);
         }
 
         .language-selector {
@@ -158,7 +236,7 @@
         }
 
         .language-btn {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.15);
             border: none;
             color: white;
             padding: 0.5rem 1rem;
@@ -168,10 +246,11 @@
             gap: 0.5rem;
             cursor: pointer;
             transition: var(--transition);
+            backdrop-filter: blur(5px);
         }
 
         .language-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.25);
         }
 
         .language-options {
@@ -217,44 +296,93 @@
             left: 20px;
             width: 60px;
             height: 60px;
-            background-color: var(--primary-color);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
             color: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 6px 15px rgba(255, 127, 0, 0.4);
             z-index: 1000;
             transition: var(--transition);
             animation: pulse 2s infinite;
         }
 
         .floating-call-btn:hover {
-            background-color: var(--primary-dark);
-            transform: scale(1.1);
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 8px 20px rgba(255, 127, 0, 0.6);
         }
 
         @keyframes pulse {
             0% {
-                box-shadow: 0 0 0 0 rgba(191, 164, 110, 0.7);
+                box-shadow: 0 0 0 0 rgba(255, 127, 0, 0.7);
             }
             70% {
-                box-shadow: 0 0 0 10px rgba(191, 164, 110, 0);
+                box-shadow: 0 0 0 12px rgba(255, 127, 0, 0);
             }
             100% {
-                box-shadow: 0 0 0 0 rgba(191, 164, 110, 0);
+                box-shadow: 0 0 0 0 rgba(255, 127, 0, 0);
             }
+        }
+
+        /* تبويب الخدمات */
+        .services-tabs {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin: 3rem 0 2rem;
+        }
+
+        .tab-button {
+            background: white;
+            border: 2px solid var(--light-gray);
+            padding: 1rem 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .tab-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-button.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            box-shadow: 0 6px 15px rgba(255, 127, 0, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         /* المحتوى الرئيسي */
         .main-content {
-            padding: 2rem 0;
+            padding: 2.5rem 0;
         }
 
         .booking-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 2rem;
+            gap: 2.5rem;
             margin-bottom: 3rem;
         }
 
@@ -266,15 +394,16 @@
 
         /* تقدم الحجز */
         .booking-progress {
-            background-color: white;
+            background: linear-gradient(135deg, #FFFFFF 0%, #FFF5E8 100%);
             border-radius: var(--border-radius);
-            padding: 1.5rem;
+            padding: 2rem;
             box-shadow: var(--box-shadow);
-            margin-bottom: 2rem;
+            margin-bottom: 2.5rem;
+            border: 1px solid var(--light-gray);
         }
 
         body.dark-mode .booking-progress {
-            background-color: var(--dark-card);
+            background: var(--dark-card);
         }
 
         .progress-steps {
@@ -290,10 +419,11 @@
             top: 50%;
             left: 0;
             right: 0;
-            height: 2px;
+            height: 3px;
             background-color: var(--light-gray);
             transform: translateY(-50%);
             z-index: 1;
+            border-radius: 3px;
         }
 
         body.dark-mode .progress-steps::before {
@@ -304,16 +434,17 @@
             position: absolute;
             top: 50%;
             left: 0;
-            height: 2px;
-            background-color: var(--primary-color);
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-light) 0%, var(--primary-color) 100%);
             transform: translateY(-50%);
             z-index: 2;
             transition: var(--transition);
+            border-radius: 3px;
         }
 
         .step {
-            width: 35px;
-            height: 35px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             background-color: white;
             border: 2px solid var(--light-gray);
@@ -324,6 +455,7 @@
             position: relative;
             z-index: 3;
             transition: var(--transition);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
         }
 
         body.dark-mode .step {
@@ -336,6 +468,8 @@
             border-color: var(--primary-color);
             background-color: var(--primary-color);
             color: white;
+            transform: scale(1.1);
+            box-shadow: 0 4px 10px rgba(255, 127, 0, 0.3);
         }
 
         .step.completed {
@@ -349,19 +483,20 @@
             top: 100%;
             left: 50%;
             transform: translateX(-50%);
-            margin-top: 0.5rem;
+            margin-top: 0.8rem;
             font-size: 0.85rem;
             white-space: nowrap;
             color: var(--text-light);
+            font-weight: 500;
         }
 
         .step.active .step-label {
             color: var(--primary-color);
-            font-weight: 500;
+            font-weight: 600;
         }
 
         body.dark-mode .step.active .step-label {
-            color: var(--primary-color);
+            color: var(--primary-light);
         }
 
         .step.completed .step-label {
@@ -370,27 +505,35 @@
 
         /* نموذج الحجز */
         .booking-form {
-            background-color: white;
+            background: linear-gradient(135deg, #FFFFFF 0%, #FFF9F2 100%);
             border-radius: var(--border-radius);
-            padding: 2rem;
+            padding: 2.5rem;
             box-shadow: var(--box-shadow);
+            border: 1px solid var(--light-gray);
         }
 
         body.dark-mode .booking-form {
-            background-color: var(--dark-card);
+            background: var(--dark-card);
         }
 
         .form-title {
             font-family: 'Playfair Display', serif;
-            font-size: 1.8rem;
-            margin-bottom: 1.5rem;
+            font-size: 2rem;
+            margin-bottom: 1.8rem;
             color: var(--secondary-color);
             position: relative;
-            padding-bottom: 0.5rem;
+            padding-bottom: 0.8rem;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         body.dark-mode .form-title {
-            color: var(--dark-text);
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-color) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .form-title::after {
@@ -398,14 +541,15 @@
             position: absolute;
             bottom: 0;
             right: 0;
-            width: 60px;
-            height: 3px;
-            background-color: var(--primary-color);
+            width: 70px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-light) 0%, var(--primary-color) 100%);
+            border-radius: 2px;
         }
 
         .form-section {
-            margin-bottom: 2rem;
-            padding-bottom: 1.5rem;
+            margin-bottom: 2.2rem;
+            padding-bottom: 1.8rem;
             border-bottom: 1px solid var(--light-gray);
         }
 
@@ -414,12 +558,12 @@
         }
 
         .section-title {
-            font-size: 1.2rem;
-            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            margin-bottom: 1.2rem;
             color: var(--secondary-color);
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.8rem;
         }
 
         body.dark-mode .section-title {
@@ -428,17 +572,19 @@
 
         .section-title i {
             color: var(--primary-color);
+            font-size: 1.4rem;
         }
 
         .form-group {
-            margin-bottom: 1.2rem;
+            margin-bottom: 1.5rem;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.6rem;
             font-weight: 500;
             color: var(--text-color);
+            font-size: 1.05rem;
         }
 
         body.dark-mode .form-group label {
@@ -447,12 +593,13 @@
 
         .form-control {
             width: 100%;
-            padding: 0.8rem 1rem;
-            border: 1px solid var(--light-gray);
-            border-radius: 8px;
+            padding: 1rem 1.2rem;
+            border: 2px solid var(--light-gray);
+            border-radius: 10px;
             font-family: inherit;
             font-size: 1rem;
             transition: var(--transition);
+            background: white;
         }
 
         body.dark-mode .form-control {
@@ -464,12 +611,13 @@
         .form-control:focus {
             outline: none;
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(191, 164, 110, 0.2);
+            box-shadow: 0 0 0 3px rgba(255, 127, 0, 0.2);
+            transform: translateY(-2px);
         }
 
         select.form-control {
             appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23bfa46e' viewBox='0 0 16 16'%3E%3Cpath d='M8 12L2 6h12L8 12z'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23FF7F00' viewBox='0 0 16 16'%3E%3Cpath d='M8 12L2 6h12L8 12z'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: left 1rem center;
             padding-left: 2.5rem;
@@ -478,7 +626,7 @@
         .date-inputs {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 1rem;
+            gap: 1.2rem;
         }
 
         @media (max-width: 576px) {
@@ -491,14 +639,14 @@
         .trip-details {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-top: 1rem;
+            gap: 1.2rem;
+            margin-top: 1.2rem;
         }
 
         .time-input {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.8rem;
         }
 
         .time-input .form-control {
@@ -508,50 +656,55 @@
         /* اختيار السيارة */
         .car-options {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 1rem;
-            margin-top: 1rem;
+            grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+            gap: 1.2rem;
+            margin-top: 1.2rem;
         }
 
         .car-option {
             border: 2px solid var(--light-gray);
             border-radius: var(--border-radius);
-            padding: 1.2rem;
+            padding: 1.5rem;
             cursor: pointer;
             transition: var(--transition);
             text-align: center;
             display: flex;
             flex-direction: column;
             align-items: center;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
         body.dark-mode .car-option {
             border-color: var(--dark-border);
+            background: var(--dark-card);
         }
 
         .car-option:hover {
             border-color: var(--primary-color);
-            transform: translateY(-3px);
+            transform: translateY(-5px);
             box-shadow: var(--box-shadow);
         }
 
         .car-option.selected {
             border-color: var(--primary-color);
-            background-color: rgba(191, 164, 110, 0.1);
+            background: linear-gradient(135deg, #FFF9F2 0%, #FFF0E0 100%);
+            box-shadow: 0 8px 20px rgba(255, 127, 0, 0.2);
         }
 
         body.dark-mode .car-option.selected {
-            background-color: rgba(191, 164, 110, 0.2);
+            background: rgba(255, 127, 0, 0.15);
         }
 
         .car-logo {
-            width: 60px;
-            height: 60px;
+            width: 70px;
+            height: 70px;
             object-fit: contain;
-            margin-bottom: 0.8rem;
-            background-color: white;
-            padding: 5px;
-            border-radius: 8px;
+            margin-bottom: 1rem;
+            background: white;
+            padding: 8px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
         }
 
         body.dark-mode .car-logo {
@@ -559,9 +712,10 @@
         }
 
         .car-name {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
+            font-weight: 700;
+            margin-bottom: 0.6rem;
             color: var(--secondary-color);
+            font-size: 1.2rem;
         }
 
         body.dark-mode .car-name {
@@ -569,44 +723,53 @@
         }
 
         .car-desc {
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             color: var(--text-light);
+            line-height: 1.5;
         }
 
         /* ملخص الحجز */
         .booking-summary {
-            background-color: white;
+            background: linear-gradient(135deg, #FFFFFF 0%, #FFF9F2 100%);
             border-radius: var(--border-radius);
-            padding: 2rem;
+            padding: 2.5rem;
             box-shadow: var(--box-shadow);
             align-self: start;
             position: sticky;
             top: 2rem;
+            border: 1px solid var(--light-gray);
         }
 
         body.dark-mode .booking-summary {
-            background-color: var(--dark-card);
+            background: var(--dark-card);
         }
 
         .summary-title {
             font-family: 'Playfair Display', serif;
-            font-size: 1.5rem;
-            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+            margin-bottom: 1.8rem;
             color: var(--secondary-color);
             border-bottom: 2px solid var(--light-gray);
-            padding-bottom: 0.8rem;
+            padding-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         body.dark-mode .summary-title {
-            color: var(--dark-text);
             border-color: var(--dark-border);
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-color) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .summary-item {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 0.8rem;
-            padding-bottom: 0.8rem;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
             border-bottom: 1px solid var(--light-gray);
         }
 
@@ -616,11 +779,13 @@
 
         .summary-label {
             color: var(--text-light);
+            font-weight: 500;
         }
 
         .summary-value {
-            font-weight: 500;
+            font-weight: 600;
             text-align: left;
+            color: var(--secondary-color);
         }
 
         body.dark-mode .summary-value {
@@ -628,56 +793,59 @@
         }
 
         .summary-note {
-            margin-top: 1.5rem;
-            padding: 1rem;
-            background-color: rgba(191, 164, 110, 0.1);
-            border-radius: 8px;
-            font-size: 0.9rem;
+            margin-top: 1.8rem;
+            padding: 1.2rem;
+            background: linear-gradient(135deg, rgba(255, 127, 0, 0.1) 0%, rgba(255, 163, 77, 0.1) 100%);
+            border-radius: 10px;
+            font-size: 0.95rem;
             color: var(--text-light);
+            border-left: 4px solid var(--primary-color);
         }
 
         body.dark-mode .summary-note {
-            background-color: rgba(191, 164, 110, 0.2);
+            background: rgba(255, 127, 0, 0.15);
         }
 
         /* أزرار التحكم */
         .form-actions {
             display: flex;
-            gap: 1rem;
-            margin-top: 2rem;
+            gap: 1.2rem;
+            margin-top: 2.5rem;
         }
 
         .btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
-            padding: 0.8rem 1.5rem;
+            gap: 0.8rem;
+            padding: 1rem 1.8rem;
             border: none;
-            border-radius: 8px;
+            border-radius: 12px;
             font-family: inherit;
-            font-size: 1rem;
-            font-weight: 500;
+            font-size: 1.1rem;
+            font-weight: 600;
             cursor: pointer;
             transition: var(--transition);
         }
 
         .btn-primary {
-            background-color: var(--primary-color);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
             color: white;
             flex: 1;
+            box-shadow: 0 5px 15px rgba(255, 127, 0, 0.3);
         }
 
         .btn-primary:hover {
-            background-color: var(--primary-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-color) 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 127, 0, 0.4);
         }
 
         .btn-secondary {
             background-color: white;
             color: var(--text-color);
-            border: 1px solid var(--light-gray);
+            border: 2px solid var(--light-gray);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
         }
 
         body.dark-mode .btn-secondary {
@@ -688,6 +856,7 @@
 
         .btn-secondary:hover {
             background-color: var(--light-gray);
+            transform: translateY(-2px);
         }
 
         body.dark-mode .btn-secondary:hover {
@@ -706,69 +875,81 @@
 
         /* قسم المميزات */
         .features-section {
-            padding: 3rem 0;
-            background-color: white;
+            padding: 4rem 0;
+            background: linear-gradient(135deg, #FFF8F0 0%, #FFEDDC 100%);
         }
 
         body.dark-mode .features-section {
-            background-color: var(--dark-bg);
+            background: var(--dark-bg);
         }
 
         .section-header {
             text-align: center;
-            margin-bottom: 3rem;
+            margin-bottom: 3.5rem;
         }
 
         .section-heading {
             font-family: 'Playfair Display', serif;
-            font-size: 2.2rem;
+            font-size: 2.5rem;
             color: var(--secondary-color);
-            margin-bottom: 1rem;
+            margin-bottom: 1.2rem;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         body.dark-mode .section-heading {
-            color: var(--dark-text);
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-color) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .section-subheading {
             color: var(--text-light);
             max-width: 700px;
             margin: 0 auto;
+            font-size: 1.1rem;
         }
 
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2.5rem;
         }
 
         .feature-card {
             text-align: center;
-            padding: 2rem 1.5rem;
+            padding: 2.5rem 2rem;
             border-radius: var(--border-radius);
-            background-color: var(--light-bg);
+            background: white;
             transition: var(--transition);
+            box-shadow: var(--box-shadow);
+            border: 1px solid var(--light-gray);
         }
 
         body.dark-mode .feature-card {
-            background-color: var(--dark-card);
+            background: var(--dark-card);
+            border-color: var(--dark-border);
         }
 
         .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--box-shadow);
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(255, 127, 0, 0.2);
         }
 
         .feature-icon {
-            font-size: 2.5rem;
+            font-size: 3rem;
             color: var(--primary-color);
-            margin-bottom: 1.2rem;
+            margin-bottom: 1.5rem;
         }
 
         .feature-title {
-            font-size: 1.2rem;
-            margin-bottom: 0.8rem;
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
             color: var(--secondary-color);
+            font-weight: 700;
         }
 
         body.dark-mode .feature-title {
@@ -777,27 +958,103 @@
 
         .feature-desc {
             color: var(--text-light);
-            font-size: 0.95rem;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        /* أقسام الخدمات الجديدة */
+        .services-section {
+            padding: 4rem 0;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .service-card {
+            background: white;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+            border: 1px solid var(--light-gray);
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .service-image {
+            height: 200px;
+            overflow: hidden;
+        }
+
+        .service-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .service-card:hover .service-image img {
+            transform: scale(1.05);
+        }
+
+        .service-content {
+            padding: 1.5rem;
+        }
+
+        .service-title {
+            font-size: 1.4rem;
+            margin-bottom: 0.8rem;
+            color: var(--secondary-color);
+        }
+
+        .service-desc {
+            color: var(--text-light);
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .service-btn {
+            display: inline-block;
+            background: var(--primary-color);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .service-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
         }
 
         /* التذييل */
         footer {
-            background-color: var(--secondary-color);
+            background: linear-gradient(135deg, var(--secondary-color) 0%, #3A3A3A 100%);
             color: white;
-            padding: 3rem 0 2rem;
+            padding: 3.5rem 0 2.5rem;
             text-align: center;
         }
 
         .footer-logo {
             font-family: 'Playfair Display', serif;
-            font-size: 2rem;
+            font-size: 2.2rem;
             font-weight: 700;
             color: var(--primary-color);
-            margin-bottom: 1rem;
+            margin-bottom: 1.2rem;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
         }
 
         .footer-contact {
-            margin: 1.5rem 0;
+            margin: 1.8rem 0;
         }
 
         .footer-contact a {
@@ -805,41 +1062,49 @@
             text-decoration: none;
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
-            margin: 0 0.5rem;
+            gap: 0.8rem;
+            margin: 0 0.8rem;
             transition: var(--transition);
+            padding: 0.8rem 1.5rem;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
         }
 
         .footer-contact a:hover {
             color: var(--primary-color);
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
         }
 
         .copyright {
-            margin-top: 2rem;
-            padding-top: 1.5rem;
+            margin-top: 2.5rem;
+            padding-top: 1.8rem;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.7);
         }
 
         /* رسائل التنبيه */
         .alert {
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1.5rem;
+            padding: 1.2rem;
+            border-radius: 10px;
+            margin-bottom: 1.8rem;
             display: flex;
             align-items: center;
-            gap: 0.8rem;
+            gap: 1rem;
+            border-left: 4px solid;
         }
 
         .alert-info {
-            background-color: #e6f2ff;
-            color: #0066cc;
-            border-left: 4px solid #0066cc;
+            background: linear-gradient(135deg, rgba(255, 127, 0, 0.1) 0%, rgba(255, 163, 77, 0.1) 100%);
+            color: var(--primary-dark);
+            border-color: var(--primary-color);
         }
 
         .alert i {
-            font-size: 1.2rem;
+            font-size: 1.5rem;
+            color: var(--primary-color);
         }
 
         /* تأثيرات للعناصر المخفية */
@@ -863,18 +1128,29 @@
 
         /* وقت الالتقاء لجميع أنواع الحجوزات */
         #meeting-time-container {
-            margin-top: 1rem;
+            margin-top: 1.5rem;
         }
     </style>
 </head>
 <body>
+    <!-- قسم الترحيب الديناميكي -->
+    <section class="welcome-section">
+        <div class="container">
+            <div class="welcome-content">
+                <h1 class="welcome-title">أهلاً بك في وصلة</h1>
+                <p class="welcome-subtitle">بوابتك الشاملة لجميع خدمات السياحة والسفر في مصر</p>
+                <a href="#services" class="welcome-cta">اكتشف خدماتنا</a>
+            </div>
+        </div>
+    </section>
+
     <!-- ترويسة الصفحة -->
     <header>
         <div class="container">
             <div class="header-content">
                 <div>
                     <div class="logo">وصلة</div>
-                    <p class="tagline">احجز سيارتك الخاصة بسائق في مصر - خدمة فاخرة للسياحة والعمل</p>
+                    <p class="tagline">خدمات متكاملة للسياحة والسفر في مصر</p>
                 </div>
                 <div class="header-controls">
                     <div class="language-selector">
@@ -900,220 +1176,460 @@
         <i class="fas fa-phone"></i>
     </a>
 
+    <!-- تبويب الخدمات -->
+    <section id="services" class="services-tabs container">
+        <button class="tab-button active" data-tab="cars">
+            <i class="fas fa-car"></i> سيارات مع سائق
+        </button>
+        <button class="tab-button" data-tab="swimming">
+            <i class="fas fa-swimming-pool"></i> أنشطة سباحة
+        </button>
+        <button class="tab-button" data-tab="hotels">
+            <i class="fas fa-hotel"></i> حجز فنادق
+        </button>
+        <button class="tab-button" data-tab="apartments">
+            <i class="fas fa-building"></i> شقق مفروشة
+        </button>
+        <button class="tab-button" data-tab="rentals">
+            <i class="fas fa-key"></i> إيجار سيارات
+        </button>
+        <button class="tab-button" data-tab="trips">
+            <i class="fas fa-map-marked-alt"></i> رحلات سياحية
+        </button>
+    </section>
+
     <!-- المحتوى الرئيسي -->
     <main class="main-content">
         <div class="container">
-            <!-- تقدم الحجز -->
-            <div class="booking-progress">
-                <h2 class="form-title">تقدم حجزك</h2>
-                <div class="progress-steps">
-                    <div class="progress-bar" style="width: 0%;"></div>
-                    <div class="step active" data-step="1">
-                        1
-                        <span class="step-label">اختيار السيارة</span>
+            <!-- محتوى خدمة السيارات (الإفتراضي) -->
+            <div class="tab-content active" id="cars-content">
+                <!-- تقدم الحجز -->
+                <div class="booking-progress">
+                    <h2 class="form-title">تقدم حجزك</h2>
+                    <div class="progress-steps">
+                        <div class="progress-bar" style="width: 0%;"></div>
+                        <div class="step active" data-step="1">
+                            1
+                            <span class="step-label">اختيار السيارة</span>
+                        </div>
+                        <div class="step" data-step="2">
+                            2
+                            <span class="step-label">نوع الطلب</span>
+                        </div>
+                        <div class="step" data-step="3">
+                            3
+                            <span class="step-label">التواريخ</span>
+                        </div>
+                        <div class="step" data-step="4">
+                            4
+                            <span class="step-label">التفاصيل</span>
+                        </div>
+                        <div class="step" data-step="5">
+                            5
+                            <span class="step-label">التأكيد</span>
+                        </div>
                     </div>
-                    <div class="step" data-step="2">
-                        2
-                        <span class="step-label">نوع الطلب</span>
+                </div>
+
+                <div class="booking-container">
+                    <!-- نموذج الحجز -->
+                    <div class="booking-form">
+                        <h2 class="form-title">تفاصيل الحجز</h2>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <span>املأ التفاصيل بالترتيب وسنقوم بتأكيد حجزك خلال دقائق</span>
+                        </div>
+
+                        <!-- الخطوة 1: اختيار السيارة -->
+                        <div class="form-step active" id="step-1">
+                            <h3 class="section-title"><i class="fas fa-car"></i> اختر نوع السيارة</h3>
+                            <div class="form-group">
+                                <label for="car-search">ابحث عن سيارة</label>
+                                <input type="text" id="car-search" class="form-control" placeholder="اكتب اسم السيارة أو النوع">
+                            </div>
+                            <div class="car-options" id="car-options-container">
+                                <!-- سيتم ملء خيارات السيارات عبر JavaScript -->
+                            </div>
+                        </div>
+
+                        <!-- الخطوة 2: نوع الطلب -->
+                        <div class="form-step" id="step-2">
+                            <h3 class="section-title"><i class="fas fa-list-alt"></i> اختر نوع الطلب</h3>
+                            <div class="form-group">
+                                <label for="request-type">نوع الخدمة</label>
+                                <select id="request-type" class="form-control">
+                                    <option value="">-- اختر نوع الطلب --</option>
+                                    <option value="single-trip">مشوار واحد فقط</option>
+                                    <option value="full-day">يوم كامل</option>
+                                    <option value="multiple-days">عدة أيام</option>
+                                </select>
+                            </div>
+
+                            <!-- تفاصيل مشوار واحد -->
+                            <div id="single-trip-details">
+                                <div class="form-group">
+                                    <label for="from-location">من</label>
+                                    <input type="text" id="from-location" class="form-control" placeholder="مكان الانطلاق">
+                                </div>
+                                <div class="form-group">
+                                    <label for="to-location">إلى</label>
+                                    <input type="text" id="to-location" class="form-control" placeholder="مكان الوصول">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- الخطوة 3: التواريخ -->
+                        <div class="form-step" id="step-3">
+                            <h3 class="section-title"><i class="fas fa-calendar-alt"></i> حدد تواريخ الحجز</h3>
+                            <div class="date-inputs">
+                                <div class="form-group">
+                                    <label for="start-date">تاريخ بداية الحجز</label>
+                                    <input type="date" id="start-date" class="form-control">
+                                </div>
+                                <div class="form-group" id="end-date-container">
+                                    <label for="end-date">تاريخ نهاية الحجز</label>
+                                    <input type="date" id="end-date" class="form-control">
+                                </div>
+                            </div>
+                            
+                            <!-- وقت الالتقاء لجميع أنواع الحجوزات -->
+                            <div id="meeting-time-container">
+                                <div class="form-group">
+                                    <label for="meeting-time">وقت الالتقاء</label>
+                                    <div class="time-input">
+                                        <input type="time" id="meeting-time" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- الخطوة 4: التفاصيل الإضافية -->
+                        <div class="form-step" id="step-4">
+                            <h3 class="section-title"><i class="fas fa-info-circle"></i> التفاصيل الإضافية</h3>
+                            <div class="form-group">
+                                <label for="range">نطاق الرحلة</label>
+                                <select id="range" class="form-control">
+                                    <option value="inside-cairo">داخل القاهرة فقط</option>
+                                    <option value="outside-cairo">داخل وخارج القاهرة</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="additional-details">أي تفاصيل إضافية تود إضافتها؟</label>
+                                <textarea id="additional-details" class="form-control" rows="4" placeholder="مثال: مشوار من المطار إلى الأهرامات، 3 ركاب، وصول الساعة 10 صباحاً، أو أي تفاصيل أخرى"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- الخطوة 5: التأكيد -->
+                        <div class="form-step" id="step-5">
+                            <h3 class="section-title"><i class="fas fa-check-circle"></i> تأكيد الحجز</h3>
+                            <div class="alert alert-info">
+                                <i class="fas fa-check-circle"></i>
+                                <span>شكراً لك! يرجى مراجعة المعلومات أدناه والتأكيد لإكمال الحجز</span>
+                            </div>
+                            <div class="summary-confirm">
+                                <div class="summary-item">
+                                    <span class="summary-label">السيارة المختارة:</span>
+                                    <span class="summary-value" id="confirm-car">لم يتم التحديد</span>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="summary-label">نوع الطلب:</span>
+                                    <span class="summary-value" id="confirm-service-type">لم يتم التحديد</span>
+                                </div>
+                                <div id="confirm-single-trip-details">
+                                    <div class="summary-item">
+                                        <span class="summary-label">من:</span>
+                                        <span class="summary-value" id="confirm-from-location">-</span>
+                                    </div>
+                                    <div class="summary-item">
+                                        <span class="summary-label">إلى:</span>
+                                        <span class="summary-value" id="confirm-to-location">-</span>
+                                    </div>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="summary-label">فترة الحجز:</span>
+                                    <span class="summary-value" id="confirm-dates">لم يتم التحديد</span>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="summary-label">وقت الالتقاء:</span>
+                                    <span class="summary-value" id="confirm-meeting-time">-</span>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="summary-label">نطاق الرحلة:</span>
+                                    <span class="summary-value" id="confirm-range">لم يتم التحديد</span>
+                                </div>
+                                <div class="summary-item" id="confirm-details-container">
+                                    <span class="summary-label">التفاصيل الإضافية:</span>
+                                    <span class="summary-value" id="confirm-details">لا يوجد</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- أزرار التحكم -->
+                        <div class="form-actions">
+                            <button id="prev-btn" class="btn btn-secondary" style="display: none;">
+                                <i class="fas fa-arrow-right"></i> السابق
+                            </button>
+                            <button id="next-btn" class="btn btn-primary">
+                                التالي <i class="fas fa-arrow-left"></i>
+                            </button>
+                            <button id="submit-btn" class="btn btn-primary" style="display: none;">
+                                <i class="fas fa-check"></i> تأكيد الحجز
+                            </button>
+                        </div>
                     </div>
-                    <div class="step" data-step="3">
-                        3
-                        <span class="step-label">التواريخ</span>
-                    </div>
-                    <div class="step" data-step="4">
-                        4
-                        <span class="step-label">التفاصيل</span>
-                    </div>
-                    <div class="step" data-step="5">
-                        5
-                        <span class="step-label">التأكيد</span>
+
+                    <!-- ملخص الحجز -->
+                    <div class="booking-summary">
+                        <h2 class="summary-title">ملخص الحجز</h2>
+                        <div class="summary-item">
+                            <span class="summary-label">السيارة:</span>
+                            <span class="summary-value" id="summary-car">لم يتم التحديد</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">نوع الطلب:</span>
+                            <span class="summary-value" id="summary-service-type">لم يتم التحديد</span>
+                        </div>
+                        <div id="summary-single-trip-details">
+                            <div class="summary-item">
+                                <span class="summary-label">من:</span>
+                                <span class="summary-value" id="summary-from-location">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">إلى:</span>
+                                <span class="summary-value" id="summary-to-location">-</span>
+                            </div>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">التواريخ:</span>
+                            <span class="summary-value" id="summary-dates">لم يتم التحديد</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">وقت الالتقاء:</span>
+                            <span class="summary-value" id="summary-meeting-time">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">نطاق الرحلة:</span>
+                            <span class="summary-value" id="summary-range">لم يتم التحديد</span>
+                        </div>
+                        <div class="summary-note">
+                            <i class="fas fa-info-circle"></i> سنقوم بالتواصل معك لتأكيد التفاصيل النهائية وتزويدك بالسعر المناسب لاحتياجاتك.
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="booking-container">
-                <!-- نموذج الحجز -->
-                <div class="booking-form">
-                    <h2 class="form-title">تفاصيل الحجز</h2>
-
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i>
-                        <span>املأ التفاصيل بالترتيب وسنقوم بتأكيد حجزك خلال دقائق</span>
-                    </div>
-
-                    <!-- الخطوة 1: اختيار السيارة -->
-                    <div class="form-step active" id="step-1">
-                        <h3 class="section-title"><i class="fas fa-car"></i> اختر نوع السيارة</h3>
-                        <div class="form-group">
-                            <label for="car-search">ابحث عن سيارة</label>
-                            <input type="text" id="car-search" class="form-control" placeholder="اكتب اسم السيارة أو النوع">
-                        </div>
-                        <div class="car-options" id="car-options-container">
-                            <!-- سيتم ملء خيارات السيارات عبر JavaScript -->
-                        </div>
-                    </div>
-
-                    <!-- الخطوة 2: نوع الطلب -->
-                    <div class="form-step" id="step-2">
-                        <h3 class="section-title"><i class="fas fa-list-alt"></i> اختر نوع الطلب</h3>
-                        <div class="form-group">
-                            <label for="request-type">نوع الخدمة</label>
-                            <select id="request-type" class="form-control">
-                                <option value="">-- اختر نوع الطلب --</option>
-                                <option value="single-trip">مشوار واحد فقط</option>
-                                <option value="full-day">يوم كامل</option>
-                                <option value="multiple-days">عدة أيام</option>
-                            </select>
-                        </div>
-
-                        <!-- تفاصيل مشوار واحد -->
-                        <div id="single-trip-details">
-                            <div class="form-group">
-                                <label for="from-location">من</label>
-                                <input type="text" id="from-location" class="form-control" placeholder="مكان الانطلاق">
-                            </div>
-                            <div class="form-group">
-                                <label for="to-location">إلى</label>
-                                <input type="text" id="to-location" class="form-control" placeholder="مكان الوصول">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- الخطوة 3: التواريخ -->
-                    <div class="form-step" id="step-3">
-                        <h3 class="section-title"><i class="fas fa-calendar-alt"></i> حدد تواريخ الحجز</h3>
-                        <div class="date-inputs">
-                            <div class="form-group">
-                                <label for="start-date">تاريخ بداية الحجز</label>
-                                <input type="date" id="start-date" class="form-control">
-                            </div>
-                            <div class="form-group" id="end-date-container">
-                                <label for="end-date">تاريخ نهاية الحجز</label>
-                                <input type="date" id="end-date" class="form-control">
-                            </div>
-                        </div>
-                        
-                        <!-- وقت الالتقاء لجميع أنواع الحجوزات -->
-                        <div id="meeting-time-container">
-                            <div class="form-group">
-                                <label for="meeting-time">وقت الالتقاء</label>
-                                <div class="time-input">
-                                    <input type="time" id="meeting-time" class="form-control">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- الخطوة 4: التفاصيل الإضافية -->
-                    <div class="form-step" id="step-4">
-                        <h3 class="section-title"><i class="fas fa-info-circle"></i> التفاصيل الإضافية</h3>
-                        <div class="form-group">
-                            <label for="range">نطاق الرحلة</label>
-                            <select id="range" class="form-control">
-                                <option value="inside-cairo">داخل القاهرة فقط</option>
-                                <option value="outside-cairo">داخل وخارج القاهرة</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="additional-details">أي تفاصيل إضافية تود إضافتها؟</label>
-                            <textarea id="additional-details" class="form-control" rows="4" placeholder="مثال: مشوار من المطار إلى الأهرامات، 3 ركاب، وصول الساعة 10 صباحاً، أو أي تفاصيل أخرى"></textarea>
-                        </div>
-                    </div>
-
-                    <!-- الخطوة 5: التأكيد -->
-                    <div class="form-step" id="step-5">
-                        <h3 class="section-title"><i class="fas fa-check-circle"></i> تأكيد الحجز</h3>
-                        <div class="alert alert-success">
-                            <i class="fas fa-check-circle"></i>
-                            <span>شكراً لك! يرجى مراجعة المعلومات أدناه والتأكيد لإكمال الحجز</span>
-                        </div>
-                        <div class="summary-confirm">
-                            <div class="summary-item">
-                                <span class="summary-label">السيارة المختارة:</span>
-                                <span class="summary-value" id="confirm-car">لم يتم التحديد</span>
-                            </div>
-                            <div class="summary-item">
-                                <span class="summary-label">نوع الطلب:</span>
-                                <span class="summary-value" id="confirm-service-type">لم يتم التحديد</span>
-                            </div>
-                            <div id="confirm-single-trip-details">
-                                <div class="summary-item">
-                                    <span class="summary-label">من:</span>
-                                    <span class="summary-value" id="confirm-from-location">-</span>
-                                </div>
-                                <div class="summary-item">
-                                    <span class="summary-label">إلى:</span>
-                                    <span class="summary-value" id="confirm-to-location">-</span>
-                                </div>
-                            </div>
-                            <div class="summary-item">
-                                <span class="summary-label">فترة الحجز:</span>
-                                <span class="summary-value" id="confirm-dates">لم يتم التحديد</span>
-                            </div>
-                            <div class="summary-item">
-                                <span class="summary-label">وقت الالتقاء:</span>
-                                <span class="summary-value" id="confirm-meeting-time">-</span>
-                            </div>
-                            <div class="summary-item">
-                                <span class="summary-label">نطاق الرحلة:</span>
-                                <span class="summary-value" id="confirm-range">لم يتم التحديد</span>
-                            </div>
-                            <div class="summary-item" id="confirm-details-container">
-                                <span class="summary-label">التفاصيل الإضافية:</span>
-                                <span class="summary-value" id="confirm-details">لا يوجد</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- أزرار التحكم -->
-                    <div class="form-actions">
-                        <button id="prev-btn" class="btn btn-secondary" style="display: none;">
-                            <i class="fas fa-arrow-right"></i> السابق
-                        </button>
-                        <button id="next-btn" class="btn btn-primary">
-                            التالي <i class="fas fa-arrow-left"></i>
-                        </button>
-                        <button id="submit-btn" class="btn btn-primary" style="display: none;">
-                            <i class="fas fa-check"></i> تأكيد الحجز
-                        </button>
-                    </div>
+            <!-- محتوى خدمة السباحة -->
+            <div class="tab-content" id="swimming-content">
+                <div class="section-header">
+                    <h2 class="section-heading">أنشطة السباحة والاستجمام المائي</h2>
+                    <p class="section-subheading">استمتع بأفضل الأنشطة المائية والمسابح في مصر مع خيارات متنوعة تناسب جميع الأذواق</p>
                 </div>
 
-                <!-- ملخص الحجز -->
-                <div class="booking-summary">
-                    <h2 class="summary-title">ملخص الحجز</h2>
-                    <div class="summary-item">
-                        <span class="summary-label">السيارة:</span>
-                        <span class="summary-value" id="summary-car">لم يتم التحديد</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">نوع الطلب:</span>
-                        <span class="summary-value" id="summary-service-type">لم يتم التحديد</span>
-                    </div>
-                    <div id="summary-single-trip-details">
-                        <div class="summary-item">
-                            <span class="summary-label">من:</span>
-                            <span class="summary-value" id="summary-from-location">-</span>
+                <div class="services-grid">
+                    <div class="service-card">
+                        <div class="service-image">
+                            <img src="https://images.unsplash.com/photo-1575429198097-0414ec08e8cd?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="مسابح فندقية">
                         </div>
-                        <div class="summary-item">
-                            <span class="summary-label">إلى:</span>
-                            <span class="summary-value" id="summary-to-location">-</span>
+                        <div class="service-content">
+                            <h3 class="service-title">مسابح فندقية فاخرة</h3>
+                            <p class="service-desc">استمتع بتجربة السباحة في أفخم المسابح الفندقية في القاهرة والإسكندرية مع خدمات متكاملة ومرافق فاخرة.</p>
+                            <a href="#" class="service-btn">احجز الآن</a>
                         </div>
                     </div>
-                    <div class="summary-item">
-                        <span class="summary-label">التواريخ:</span>
-                        <span class="summary-value" id="summary-dates">لم يتم التحديد</span>
+
+                    <div class="service-card">
+                        <div class="service-image">
+                            <img src="https://images.unsplash.com/photo-1590649880760-2d4b0f523de7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="رحلات غوص">
+                        </div>
+                        <div class="service-content">
+                            <h3 class="service-title">رحلات غوص واستكشاف</h3>
+                            <p class="service-desc">اكتشف عالم الأعماق في رحلات الغوص الممتعة في البحر الأحمر مع مدربين محترفين ومعدات حديثة.</p>
+                            <a href="#" class="service-btn">احجز الآن</a>
+                        </div>
                     </div>
-                    <div class="summary-item">
-                        <span class="summary-label">وقت الالتقاء:</span>
-                        <span class="summary-value" id="summary-meeting-time">-</span>
+
+                    <div class="service-card">
+                        <div class="service-image">
+                            <img src="https://images.unsplash.com/photo-1590071089560-5d4df1fa8994?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="أنشطة مائية">
+                        </div>
+                        <div class="service-content">
+                            <h3 class="service-title">أنشطة مائية ترفيهية</h3>
+                            <p class="service-desc">استمتع بمجموعة من الأنشطة المائية المثيرة مثل التزلج على الماء وركوب القوارب والعديد من الألعاب المائية.</p>
+                            <a href="#" class="service-btn">احجز الآن</a>
+                        </div>
                     </div>
-                    <div class="summary-item">
-                        <span class="summary-label">نطاق الرحلة:</span>
-                        <span class="summary-value" id="summary-range">لم يتم التحديد</span>
+                </div>
+            </div>
+
+            <!-- محتوى خدمة الفنادق -->
+            <div class="tab-content" id="hotels-content">
+                <div class="section-header">
+                    <h2 class="section-heading">حجز الفنادق والإقامة</h2>
+                    <p class="section-subheading">اختر من بين مجموعة واسعة من الفنادق في جميع أنحاء مصر بأسعار تنافسية وضمان أفضل خدمة</p>
+                </div>
+
+                <div class="services-grid">
+                    <div class="service-card">
+                        <div class="service-image">
+                            <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="فنادق 5 نجوم">
+                        </div>
+                        <div class="service-content">
+                            <h3 class="service-title">فنادق 5 نجوم</h3>
+                            <p class="service-desc">إقامة فاخرة في أفخم الفنادق العالمية بمصر مع خدمات متكاملة ومرافق عالمية المستوى.</p>
+                            <a href="#" class="service-btn">احجز الآن</a>
+                        </div>
                     </div>
-                    <div class="summary-note">
-                        <i class="fas fa-info-circle"></i> سنقوم بالتواصل معك لتأكيد التفاصيل النهائية وتزويدك بالسعر المناسب لاحتياجاتك.
+
+                    <div class="service-card">
+                        <div class="service-image">
+                            <img src="https://images.unsplash.com/photo-1582719508461-905c673771fd?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="فنادق 4 نجوم">
+                        </div>
+                        <div class="service-content">
+                            <h3 class="service-title">فنادق 4 نجوم</h3>
+                            <p class="service-desc">فنادق متميزة توفر الراحة والرفاهية بأسعار مناسبة مع خدمات عالية الجودة ومواقع مميزة.</p>
+                            <a href="#" class="service-btn">احجز الآن</a>
+                        </div>
+                    </div>
+
+                    <div class="service-card">
+                        <div class="service-image">
+                            <img src="https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="فنادق اقتصادية">
+                        </div>
+                        <div class="service-content">
+                            <h3 class="service-title">فنادق اقتصادية</h3>
+                            <p class="service-desc">خيارات إقامة مريحة وبأسعار معقولة تناسب الميزانية دون التضحية بالجودة والخدمة الجيدة.</p>
+                            <a href="#" class="service-btn">احجز الآن</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- محتوى خدمة الشقق المفروشة -->
+            <div class="tab-content" id="apartments-content">
+                <div class="section-header">
+                    <h2 class="section-heading">شقق مفروشة للإيجار</h2>
+                    <p class="section-subheading">شقق فندقية مفروشة بشكل كامل مع جميع الخدمات لتجربة إقامة مريحة وخاصة في مختلف مدن مصر</p>
+                </div>
+
+                <div class="services-grid">
+                    <div class="service-card">
+                        <div class="service-image">
+                            <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="شقق فاخرة">
+                        </div>
+                        <div class="service-content">
+                            <h3 class="service-title">شقق فاخرة</h3>
+                            <p class="service-desc">شقق مفروشة بتصميم راقي ومساحات واسعة مع خدمات فندقية متكاملة ومرافق متطورة.</p>
+                            <a href="#" class="service-btn">احجز الآن</a>
+                        </div>
+                    </div>
+
+                    <div class="service-card">
+                        <div class="service-image">
+                            <img src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="شقق عائلية">
+                        </div>
+                        <div class="service-content">
+                            <h3 class="service-title">شقق عائلية</h3>
+                            <p class="service-desc">شقق واسعة مجهزة لاستضافة العائلات مع غرف متعددة ومطابخ كاملة وتجهيزات مناسبة للأطفال.</p>
+                            <a href="#" class="service-btn">احجز الآن</a>
+                        </div>
+                    </div>
+
+                    <div class="service-card">
+                        <div class="service-image">
+                            <img src="https://images.unsplash.com/photo-1493663284031-b7e3aaa4c4b9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="شققstudio">
+                        </div>
+                        <div class="service-content">
+                            <h3 class="service-title">شقق استوديو</h3>
+                            <p class="service-desc">شقق صغيرة الحجم ولكنها مجهزة بشكل كامل ومثالية للإقامة الفردية أو لشخصين لفترات قصيرة أو طويلة.</p>
+                            <a href="#" class="service-btn">احجز الآن</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- محتوى خدمة إيجار السيارات -->
+            <div class="tab-content" id="rentals-content">
+                <div class="section-header">
+                    <h2 class="section-heading">إيجار سيارات بدون سائق</h2>
+                    <p class="section-subheading">اختر من بين مجموعة واسعة من السيارات للإيجار اليومي أو الأسبوعي أو الشهري بدون سائق وبأفضل الأسعار</p>
+                </div>
+
+                <div class="services-grid">
+                    <div class="service-card">
+                        <div class="service-image">
+                            <img src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="سيارات اقتصادية">
+                        </div>
+                        <div class="service-content">
+                            <h3 class="service-title">سيارات اقتصادية</h3>
+                            <p class="service-desc">سيارات صغيرة وموفرة للوقود مثالية للتنقل داخل المدينة بأسعار إيجار مناسبة جداً.</p>
+                            <a href="#" class="service-btn">احجز الآن</a>
+                        </div>
+                    </div>
+
+                    <div class="service-card">
+                        <div class="service-image">
+                            <img src="https://images.unsplash.com/photo-1542362567-b07e54358753?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="سيارات عائلية">
+                        </div>
+                        <div class="service-content">
+                            <h3 class="service-title">سيارات عائلية</h3>
+                            <p class="service-desc">سيارات متوسطة الحجم مريحة ومناسبة للعائلات مع مساحة كافية للأمتعة والرحلات الطويلة.</p>
+                            <a href="#" class="service-btn">احجز الآن</a>
+                        </div>
+                    </div>
+
+                    <div class="service-card">
+                        <div class="service-image">
+                            <img src="https://images.unsplash.com/photo-1553440569-bcc63803a83d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="سيارات دفع رباعي">
+                        </div>
+                        <div class="service-content">
+                            <h3 class="service-title">سيارات دفع رباعي</h3>
+                            <p class="service-desc">سيارات قوية ومناسبة للطرق الوعرة والرحلات الصحراوية مع دفع رباعي وأداء عالي.</p>
+                            <a href="#" class="service-btn">احجز الآن</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- محتوى خدمة الرحلات -->
+            <div class="tab-content" id="trips-content">
+                <div class="section-header">
+                    <h2 class="section-heading">رحلات سياحية لجميع المحافظات</h2>
+                    <p class="section-subheading">استمعر برحلات منظمة إلى أهم الوجهات السياحية في مصر مع برامج متكاملة ومرشدين سياحيين محترفين</p>
+                </div>
+
+                <div class="services-grid">
+                    <div class="service-card">
+                        <div class="service-image">
+                            <img src="https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="رحلات الأقصر وأسوان">
+                        </div>
+                        <div class="service-content">
+                            <h3 class="service-title">رحلات الأقصر وأسوان</h3>
+                            <p class="service-desc">اكتشف عظمة الحضارة الفرعونية في رحلات إلى معابد الأقصر وأسوان ومقابر وادي الملوك والملكات.</p>
+                            <a href="#" class="service-btn">احجز الآن</a>
+                        </div>
+                    </div>
+
+                    <div class="service-card">
+                        <div class="service-image">
+                            <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="رحلات البحر الأحمر">
+                        </div>
+                        <div class="service-content">
+                            <h3 class="service-title">رحلات البحر الأحمر</h3>
+                            <p class="service-desc">استمتع بالشمس والشواطئ الذهبية والأنشطة المائية الممتعة في الغردقة وشرم الشيخ ومرسى علم.</p>
+                            <a href="#" class="service-btn">احجز الآن</a>
+                        </div>
+                    </div>
+
+                    <div class="service-card">
+                        <div class="service-image">
+                            <img src="https://images.unsplash.com/photo-1580502304784-8985b7eb7260?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="رحلات سيناء">
+                        </div>
+                        <div class="service-content">
+                            <h3 class="service-title">رحلات سيناء</h3>
+                            <p class="service-desc">تجربة فريدة في صحاري وجبال سيناء مع رحلات السفاري وتسلق الجبال وزيارة دير سانت كاترين.</p>
+                            <a href="#" class="service-btn">احجز الآن</a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1125,7 +1641,7 @@
         <div class="container">
             <div class="section-header">
                 <h2 class="section-heading">لماذا تختار وصلة؟</h2>
-                <p class="section-subheading">نحن نقدم خدمة سيارات خاصة بسائق في مصر مع أفضل المعايير والجودة</p>
+                <p class="section-subheading">نحن نقدم خدمات متكاملة للسياحة والسفر في مصر مع أفضل المعايير والجودة</p>
             </div>
             <div class="features-grid">
                 <div class="feature-card">
@@ -1139,15 +1655,15 @@
                     <div class="feature-icon">
                         <i class="fas fa-user-tie"></i>
                     </div>
-                    <h3 class="feature-title">سائقون محترفون</h3>
-                    <p class="feature-desc">سائقون بخبرة عالية ومعرفة تامة بالطرق والأماكن</p>
+                    <h3 class="feature-title">خدمة محترفة</h3>
+                    <p class="feature-desc">فريق خدمة عملاء متخصص على أعلى مستوى من الخبرة والكفاءة</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
                         <i class="fas fa-shield-alt"></i>
                     </div>
                     <h3 class="feature-title">آمن وموثوق</h3>
-                    <p class="feature-desc">سيارات مجهزة ومصانة بشكل دوري لتضمن رحلة آمنة</p>
+                    <p class="feature-desc">شركاء معتمدون ومراجعات حقيقية تضمن لك تجربة آمنة وموثوقة</p>
                 </div>
             </div>
         </div>
@@ -1157,7 +1673,7 @@
     <footer>
         <div class="container">
             <div class="footer-logo">وصلة</div>
-            <p>خدمة حجز سيارات خاصة بسائق في مصر للسياحة والعمل وأي غرض آخر</p>
+            <p>خدمات متكاملة للسياحة والسفر في مصر - سيارات مع سائق، أنشطة سباحة، حجز فنادق، شقق مفروشة، إيجار سيارات، رحلات سياحية</p>
             <div class="footer-contact">
                 <a href="https://wa.me/201102255320" target="_blank">
                     <i class="fab fa-whatsapp"></i> واتساب
@@ -1177,8 +1693,8 @@
         const translations = {
             ar: {
                 // النصوص العربية
-                title: "وصلة - احجز سيارتك الخاصة في مصر",
-                tagline: "احجز سيارتك الخاصة بسائق في مصر - خدمة فاخرة للسياحة والعمل",
+                title: "وصلة - خدمات متكاملة للسياحة والسفر في مصر",
+                tagline: "خدمات متكاملة للسياحة والسفر في مصر",
                 bookingProgress: "تقدم حجزك",
                 bookingDetails: "تفاصيل الحجز",
                 infoMessage: "املأ التفاصيل بالترتيب وسنقوم بتأكيد حجزك خلال دقائق",
@@ -1225,14 +1741,14 @@
                 summaryTitle: "ملخص الحجز",
                 summaryNote: "سنقوم بالتواصل معك لتأكيد التفاصيل النهائية وتزويدك بالسعر المناسب لاحتياجاتك.",
                 featuresTitle: "لماذا تختار وصلة؟",
-                featuresSubtitle: "نحن نقدم خدمة سيارات خاصة بسائق في مصر مع أفضل المعايير والجودة",
+                featuresSubtitle: "نحن نقدم خدمات متكاملة للسياحة والسفر في مصر مع أفضل المعايير والجودة",
                 feature1Title: "حجز سهل وسريع",
                 feature1Desc: "عملية حجز مبسطة توفر لك الوقت والجهد مع تأكيد فوري",
-                feature2Title: "سائقون محترفون",
-                feature2Desc: "سائقون بخبرة عالية ومعرفة تامة بالطرق والأماكن",
+                feature2Title: "خدمة محترفة",
+                feature2Desc: "فريق خدمة عملاء متخصص على أعلى مستوى من الخبرة والكفاءة",
                 feature3Title: "آمن وموثوق",
-                feature3Desc: "سيارات مجهزة ومصانة بشكل دوري لتضمن رحلة آمنة",
-                footerText: "خدمة حجز سيارات خاصة بسائق في مصر للسياحة والعمل وأي غرض آخر",
+                feature3Desc: "شركاء معتمدون ومراجعات حقيقية تضمن لك تجربة آمنة وموثوقة",
+                footerText: "خدمات متكاملة للسياحة والسفر في مصر - سيارات مع سائق، أنشطة سباحة، حجز فنادق، شقق مفروشة، إيجار سيارات، رحلات سياحية",
                 copyright: "© 2023 وصلة. جميع الحقوق محفوظة.",
                 chooseCar: "يرجى اختيار سيارة",
                 chooseServiceType: "يرجى اختيار نوع الخدمة",
@@ -1244,8 +1760,8 @@
             },
             en: {
                 // English texts
-                title: "Wasla - Book Your Private Car in Egypt",
-                tagline: "Book your private car with driver in Egypt - Premium service for tourism and work",
+                title: "Wasla - Comprehensive Tourism and Travel Services in Egypt",
+                tagline: "Comprehensive tourism and travel services in Egypt",
                 bookingProgress: "Booking Progress",
                 bookingDetails: "Booking Details",
                 infoMessage: "Fill in the details in order and we will confirm your booking within minutes",
@@ -1292,14 +1808,14 @@
                 summaryTitle: "Booking Summary",
                 summaryNote: "We will contact you to confirm the final details and provide you with the appropriate price for your needs.",
                 featuresTitle: "Why Choose Wasla?",
-                featuresSubtitle: "We provide private car with driver service in Egypt with the best standards and quality",
+                featuresSubtitle: "We provide comprehensive tourism and travel services in Egypt with the best standards and quality",
                 feature1Title: "Easy and Fast Booking",
                 feature1Desc: "Simplified booking process saves you time and effort with instant confirmation",
-                feature2Title: "Professional Drivers",
-                feature2Desc: "Drivers with high experience and full knowledge of roads and places",
+                feature2Title: "Professional Service",
+                feature2Desc: "Specialized customer service team with the highest level of experience and efficiency",
                 feature3Title: "Safe and Reliable",
-                feature3Desc: "Equipped and regularly maintained cars to ensure a safe trip",
-                footerText: "Private car with driver service in Egypt for tourism, work and any other purpose",
+                feature3Desc: "Certified partners and real reviews ensure a safe and reliable experience",
+                footerText: "Comprehensive tourism and travel services in Egypt - Cars with drivers, swimming activities, hotel bookings, furnished apartments, car rentals, tourist trips",
                 copyright: "© 2023 Wasla. All rights reserved.",
                 chooseCar: "Please choose a car",
                 chooseServiceType: "Please select service type",
@@ -1426,7 +1942,30 @@
             
             // تحميل الترجمة الحالية
             updatePageLanguage();
+            
+            // إضافة مستمعي الأحداث لأزرار التبويب
+            setupTabs();
         });
+
+        // إعداد نظام التبويب
+        function setupTabs() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabId = button.getAttribute('data-tab');
+                    
+                    // إزالة النشاط من جميع الأزرار والمحتويات
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    // إضافة النشاط للزر والمحتوى المحدد
+                    button.classList.add('active');
+                    document.getElementById(`${tabId}-content`).classList.add('active');
+                });
+            });
+        }
 
         // تحديث لغة الصفحة
         function updatePageLanguage() {
@@ -1467,7 +2006,7 @@
             
             // تحديث نصوص التأكيد
             document.querySelector('#step-5 .section-title').textContent = t.confirmationTitle;
-            document.querySelector('#step-5 .alert-success span').textContent = t.confirmationMessage;
+            document.querySelector('#step-5 .alert-info span').textContent = t.confirmationMessage;
             
             // تحديث نصوص الملخص
             document.querySelectorAll('.summary-label')[0].textContent = t.car + ":";
@@ -1657,7 +2196,7 @@
                 const desc = currentLanguage === 'ar' ? car.desc : car.descEn;
                 
                 carElement.innerHTML = `
-                    <img src="${car.logo}" alt="${name}" class="car-logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2JmYTQ2ZSI+PHBhdGggZD0iTTE5IDNINGMtMS4xMSAwLTIgLjg5LTIgMnYxMmMwIDEuMS44OSAyIDIgMmgxNWMxLjEgMCAyLS45IDItMlY2YzAtMS4xMS0uOS0yLTItMnptMCA0SDRWNmgxNXY0eiIvPjxwYXRoIGQ9Ik0wIDBoMjR2MjRIMHoiIGZpbGw9Im5vbmUiLz48L3N2Zz4='">
+                    <img src="${car.logo}" alt="${name}" class="car-logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2ZmN2YwMCI+PHBhdGggZD0iTTE5IDNINGMtMS4xMSAwLTIgLjg5LTIgMnYxMmMwIDEuMS44OSAyIDIgMmgxNWMxLjEgMCAyLS45IDItMlY2YzAtMS4xMS0uOS0yLTItMnptMCA0SDRWNmgxNXY0eiIvPjxwYXRoIGQ9Ik0wIDBoMjR2MjRIMHoiIGZpbGw9Im5vbmUiLz48L3N2Zz4='">
                     <h3 class="car-name">${name}</h3>
                     <p class="car-desc">${desc}</p>
                 `;

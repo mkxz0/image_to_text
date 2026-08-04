@@ -3,145 +3,565 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم - الإحداثيات</title>
+    <title>لوحة التحكم المتطورة - الإحداثيات</title>
+    <!-- Firebase SDK للتحديث التلقائي -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
+        * { box-sizing: border-box; margin: 0; }
         body {
             font-family: 'Segoe UI', Tahoma, sans-serif;
             background: #1e1e1e;
             color: #e0e0e0;
             padding: 20px;
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
+            position: relative;
         }
-        h2 { color: #81c995; text-align: center; }
-        .entry {
-            background: #2d2d2d;
-            border: 1px solid #444;
-            border-radius: 10px;
-            padding: 15px;
-            margin: 10px 0;
+        h2 { color: #81c995; text-align: center; margin-bottom: 20px; }
+
+        /* ===== شاشة التحميل المتطورة ===== */
+        #loaderOverlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(20, 20, 30, 0.95);
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
-            flex-wrap: wrap;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.6s ease;
+            backdrop-filter: blur(4px);
         }
-        .coords {
-            font-family: monospace;
-            font-size: 16px;
+        #loaderOverlay.hidden {
+            opacity: 0;
+            pointer-events: none;
         }
-        .time {
-            font-size: 12px;
-            color: #aaa;
+        .spinner {
+            width: 70px;
+            height: 70px;
+            border: 6px solid #2d2d2d;
+            border-top: 6px solid #81c995;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 25px;
         }
-        .map-link {
-            background: #394457;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
-            text-decoration: none;
-            font-size: 13px;
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loader-text {
+            font-size: 22px;
+            color: #ccc;
+            letter-spacing: 1px;
+            transition: all 0.3s;
         }
-        .loading { text-align: center; margin-top: 30px; }
+        .loader-sub {
+            margin-top: 12px;
+            font-size: 14px;
+            color: #81c995;
+            background: #2a2a2a;
+            padding: 6px 20px;
+            border-radius: 30px;
+            border: 1px solid #444;
+            min-width: 200px;
+            text-align: center;
+        }
+        .loader-progress {
+            margin-top: 20px;
+            width: 200px;
+            height: 4px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .loader-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #81c995, #4caf86);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        /* ===== باقي التنسيقات ===== */
         .password-box {
             text-align: center;
-            margin: 30px 0;
+            margin: 50px 0;
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 16px;
+            border: 1px solid #444;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
         }
         input[type="password"] {
-            padding: 10px;
+            padding: 12px;
             border-radius: 8px;
             border: 1px solid #555;
-            background: #333;
+            background: #1e1e1e;
             color: white;
-            width: 250px;
+            width: 100%;
             text-align: center;
+            font-size: 16px;
+            margin-bottom: 12px;
         }
         button {
-            padding: 10px 20px;
+            padding: 10px 24px;
             border-radius: 8px;
             border: none;
             background: #81c995;
             color: #000;
             cursor: pointer;
             font-weight: bold;
-            margin: 5px;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+        button:hover { background: #6ab87d; transform: scale(1.02); }
+        button.danger { background: #e06b6b; }
+        button.danger:hover { background: #d45a5a; }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: #2d2d2d;
+            padding: 12px 18px;
+            border-radius: 12px;
+            border: 1px solid #3d3d3d;
+        }
+        .badge {
+            background: #394457;
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-size: 13px;
+        }
+
+        .entry {
+            background: #2d2d2d;
+            border: 1px solid #444;
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            transition: 0.2s;
+        }
+        .entry:hover { border-color: #81c995; background: #333; }
+        .coords { font-family: monospace; font-size: 16px; font-weight: 500; }
+        .time { font-size: 12px; color: #aaa; margin-top: 4px; }
+        .map-link {
+            background: #394457;
+            color: white;
+            padding: 5px 14px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-size: 13px;
+            transition: 0.2s;
+        }
+        .map-link:hover { background: #4a5a77; }
+
+        /* ===== الترقيم (Pagination) ===== */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+        .pagination button {
+            background: #394457;
+            color: white;
+            padding: 6px 18px;
+            border-radius: 30px;
+            font-size: 14px;
+        }
+        .pagination button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .pagination span {
+            background: #1e1e1e;
+            padding: 5px 18px;
+            border-radius: 30px;
+            border: 1px solid #444;
+            font-size: 14px;
+        }
+
+        /* ===== سجلات النشاط ===== */
+        .activity-section {
+            margin-top: 40px;
+            background: #252525;
+            border-radius: 12px;
+            border: 1px solid #3a3a3a;
+            padding: 16px;
+        }
+        .activity-section h3 {
+            color: #81c995;
+            font-size: 16px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .activity-log {
+            max-height: 150px;
+            overflow-y: auto;
+            font-size: 13px;
+            color: #bbb;
+            direction: ltr;
+            text-align: left;
+        }
+        .activity-log::-webkit-scrollbar { width: 4px; }
+        .activity-log::-webkit-scrollbar-thumb { background: #81c995; border-radius: 4px; }
+        .log-item {
+            padding: 5px 8px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            font-family: monospace;
+        }
+        .log-item .log-time { color: #888; }
+        .log-item .log-action { color: #d4d4d4; }
+
+        .empty-msg { text-align: center; color: #777; padding: 20px; }
+
+        /* استجابة */
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .entry { flex-direction: column; align-items: stretch; gap: 8px; }
+            .toolbar { flex-direction: column; align-items: stretch; }
         }
     </style>
 </head>
 <body>
-    <h2>📍 سجل زوار الموقع</h2>
+
+    <!-- ===== شاشة التحميل المتطورة ===== -->
+    <div id="loaderOverlay">
+        <div class="spinner"></div>
+        <div class="loader-text" id="loaderText">⏳ جاري الاتصال بقاعدة البيانات</div>
+        <div class="loader-sub" id="loaderSub">تهيئة الاتصال الآمن...</div>
+        <div class="loader-progress">
+            <div class="loader-progress-bar" id="loaderProgressBar"></div>
+        </div>
+    </div>
+
+    <h2>📍 لوحة التحكم المتطورة</h2>
+
+    <!-- ===== تسجيل الدخول ===== -->
     <div id="loginBox" class="password-box">
-        <input type="password" id="password" placeholder="أدخل كلمة المرور">
-        <button onclick="checkPassword()">عرض</button>
+        <h3 style="margin-bottom:15px;color:#81c995;">🔐 دخول المشرف</h3>
+        <input type="password" id="password" placeholder="أدخل كلمة المرور" autofocus>
+        <button onclick="checkPassword()" style="width:100%;">تسجيل الدخول</button>
     </div>
 
+    <!-- ===== لوحة البيانات ===== -->
     <div id="dataContainer" style="display:none;">
-        <button onclick="refreshData()" style="margin-bottom:15px;">تحديث</button>
-        <div id="entries"></div>
-    </div>
+        <div class="toolbar">
+            <div>
+                <span class="badge">📌 إجمالي الزوار: <span id="totalCount">0</span></span>
+                <span class="badge" style="margin-right:8px;">⏱️ تحديث لحظي</span>
+            </div>
+            <div>
+                <button onclick="refreshManual()" style="background:#4a5a77;color:white;">🔄 تحديث يدوي</button>
+            </div>
+        </div>
 
-    <div class="loading" id="loading" style="display:none;">جاري التحميل...</div>
+        <div id="entries"></div>
+
+        <!-- الترقيم -->
+        <div class="pagination" id="paginationControls">
+            <button id="prevPageBtn" onclick="changePage(-1)">◀ السابق</button>
+            <span id="pageInfo">الصفحة 1 / 1</span>
+            <button id="nextPageBtn" onclick="changePage(1)">التالي ▶</button>
+        </div>
+
+        <!-- ===== سجلات النشاط ===== -->
+        <div class="activity-section">
+            <h3>📋 سجلات النشاط (آخر 10)</h3>
+            <div class="activity-log" id="activityLog">
+                <div class="empty-msg">لا توجد سجلات بعد</div>
+            </div>
+        </div>
+    </div>
 
     <script>
-        // بيانات مشروعك
+        // =============================================
+        // 1. تهيئة Firebase
+        // =============================================
         const firebaseConfig = {
             apiKey: "AIzaSyBvQWo5HIintxbq9hyz_88kVfebFyfiFuo",
             databaseURL: "https://imggps-default-rtdb.firebaseio.com",
             projectId: "imggps"
         };
-
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
         const DB_PATH = "visitors";
-        const ADMIN_PASSWORD = "12345"; // غيّرها لكلمة سر خاصة بك
+        const ACTIVITY_PATH = "activity_logs";
+        const ADMIN_PASSWORD = "12345";
 
+        // =============================================
+        // 2. المتغيرات العامة
+        // =============================================
         let allData = [];
+        let currentPage = 1;
+        const pageSize = 5;
+        let isFirstLoad = true;
 
-        function checkPassword() {
-            const pass = document.getElementById('password').value;
-            if (pass === ADMIN_PASSWORD) {
-                document.getElementById('loginBox').style.display = 'none';
-                document.getElementById('dataContainer').style.display = 'block';
-                refreshData();
-            } else {
-                alert('كلمة المرور خاطئة');
-            }
+        // عناصر شاشة التحميل
+        const loaderOverlay = document.getElementById('loaderOverlay');
+        const loaderText = document.getElementById('loaderText');
+        const loaderSub = document.getElementById('loaderSub');
+        const loaderProgress = document.getElementById('loaderProgressBar');
+
+        // =============================================
+        // 3. دوال شاشة التحميل المتطورة
+        // =============================================
+        let progressInterval;
+        let progressValue = 0;
+
+        function startAdvancedLoader() {
+            loaderOverlay.classList.remove('hidden');
+            progressValue = 0;
+            loaderProgress.style.width = '0%';
+            loaderText.textContent = '⏳ جاري الاتصال بقاعدة البيانات';
+            loaderSub.textContent = 'تهيئة الاتصال الآمن...';
+
+            clearInterval(progressInterval);
+            progressInterval = setInterval(() => {
+                if (progressValue < 90) {
+                    progressValue += Math.floor(Math.random() * 8) + 2;
+                    if (progressValue > 90) progressValue = 90;
+                    loaderProgress.style.width = progressValue + '%';
+                }
+
+                // تغيير الرسائل ديناميكياً
+                if (progressValue < 30) {
+                    loaderText.textContent = '⏳ جاري الاتصال بقاعدة البيانات';
+                    loaderSub.textContent = 'التحقق من الشبكة...';
+                } else if (progressValue < 60) {
+                    loaderText.textContent = '📡 جاري تحميل البيانات';
+                    loaderSub.textContent = 'معالمة الإحداثيات والجداول...';
+                } else if (progressValue < 85) {
+                    loaderText.textContent = '🔄 مزامنة التحديثات اللحظية';
+                    loaderSub.textContent = 'تجهيز لوحة التحكم...';
+                }
+            }, 600);
         }
 
-        function refreshData() {
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('entries').innerHTML = '';
-            fetch(`${firebaseConfig.databaseURL}/${DB_PATH}.json`)
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('loading').style.display = 'none';
+        function stopAdvancedLoader() {
+            clearInterval(progressInterval);
+            loaderProgress.style.width = '100%';
+            loaderText.textContent = '✅ تم التحميل بنجاح';
+            loaderSub.textContent = 'لوحة التحكم جاهزة';
+
+            setTimeout(() => {
+                loaderOverlay.classList.add('hidden');
+            }, 500);
+        }
+
+        // =============================================
+        // 4. سجلات النشاط (Activity Logs)
+        // =============================================
+        function logActivity(action, details = '') {
+            const timestamp = Date.now();
+            const dateStr = new Date(timestamp).toLocaleString('ar-EG');
+            const logRef = db.ref(ACTIVITY_PATH).push();
+            logRef.set({
+                action: action,
+                details: details,
+                timestamp: timestamp,
+                date: dateStr
+            }).catch(err => console.warn('فشل تسجيل النشاط:', err));
+
+            // عرض فوري في الواجهة (أيضاً سنعتمد على المستمع)
+        }
+
+        // مستمع لسجلات النشاط (يعرض آخر 10)
+        function listenActivityLogs() {
+            db.ref(ACTIVITY_PATH).orderByChild('timestamp').limitToLast(10).on('value', (snapshot) => {
+                const container = document.getElementById('activityLog');
+                const data = snapshot.val();
                 if (!data) {
-                    document.getElementById('entries').innerHTML = '<p>لا توجد بيانات بعد.</p>';
+                    container.innerHTML = '<div class="empty-msg">لا توجد سجلات بعد</div>';
                     return;
                 }
-                allData = Object.entries(data).map(([key, val]) => ({ id: key, ...val }));
-                allData.sort((a, b) => b.timestamp - a.timestamp);
-                renderEntries(allData);
-            })
-            .catch(err => {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('entries').innerHTML = '<p style="color:red;">فشل الاتصال بقاعدة البيانات</p>';
-                console.error(err);
+                const entries = Object.entries(data).map(([key, val]) => ({ id: key, ...val }));
+                entries.sort((a, b) => b.timestamp - a.timestamp);
+
+                container.innerHTML = entries.map(item => `
+                    <div class="log-item">
+                        <span class="log-action">${item.action} ${item.details ? ' - ' + item.details : ''}</span>
+                        <span class="log-time">${item.date || new Date(item.timestamp).toLocaleString('ar-EG')}</span>
+                    </div>
+                `).join('');
             });
         }
 
-        function renderEntries(data) {
+        // =============================================
+        // 5. التحديث التلقائي (Real-time Listener)
+        // =============================================
+        let isListenerActive = false;
+
+        function startRealtimeListener() {
+            if (isListenerActive) return;
+            isListenerActive = true;
+
+            db.ref(DB_PATH).on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (!data) {
+                    allData = [];
+                    document.getElementById('totalCount').textContent = '0';
+                    renderPage();
+                    if (isFirstLoad) {
+                        stopAdvancedLoader();
+                        isFirstLoad = false;
+                    }
+                    return;
+                }
+
+                // تحويل إلى مصفوفة وترتيب تنازلي
+                const newData = Object.entries(data).map(([key, val]) => ({ id: key, ...val }));
+                newData.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+                // تحديث البيانات
+                allData = newData;
+                document.getElementById('totalCount').textContent = allData.length;
+
+                // إعادة عرض الصفحة الحالية
+                renderPage();
+
+                // تسجيل نشاط التحديث (مرة كل 5 تحديثات تجنباً للإغراق)
+                if (Math.random() < 0.3) { // تسجيل عشوائي لتخفيف الضغط
+                    logActivity('🔄 تحديث تلقائي', `عدد الزوار: ${allData.length}`);
+                }
+
+                // إخفاء شاشة التحميل عند أول تحميل
+                if (isFirstLoad) {
+                    stopAdvancedLoader();
+                    isFirstLoad = false;
+                }
+            }, (error) => {
+                console.error('خطأ في المستمع:', error);
+                document.getElementById('entries').innerHTML = '<p style="color:red;">⚠️ خطأ في الاتصال اللحظي، جارٍ المحاولة مجدداً...</p>';
+                if (isFirstLoad) {
+                    stopAdvancedLoader();
+                    isFirstLoad = false;
+                }
+            });
+        }
+
+        // =============================================
+        // 6. الترقيم (Pagination)
+        // =============================================
+        function renderPage() {
             const container = document.getElementById('entries');
-            container.innerHTML = data.map(item => {
+            const total = allData.length;
+            const totalPages = Math.ceil(total / pageSize) || 1;
+
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            const start = (currentPage - 1) * pageSize;
+            const end = Math.min(start + pageSize, total);
+            const pageData = allData.slice(start, end);
+
+            // تحديث معلومات الصفحة
+            document.getElementById('pageInfo').textContent = `الصفحة ${currentPage} / ${totalPages}`;
+            document.getElementById('prevPageBtn').disabled = (currentPage === 1);
+            document.getElementById('nextPageBtn').disabled = (currentPage === totalPages);
+
+            if (pageData.length === 0) {
+                container.innerHTML = '<div class="empty-msg">🚫 لا توجد زيارات مسجلة</div>';
+                return;
+            }
+
+            container.innerHTML = pageData.map(item => {
                 const date = new Date(item.timestamp).toLocaleString('ar-EG');
                 const mapsUrl = `https://www.google.com/maps?q=${item.lat},${item.lng}`;
                 return `
                 <div class="entry">
                     <div>
-                        <div class="coords">${item.lat}, ${item.lng}</div>
-                        <div class="time">${date} · الدقة: ±${item.accuracy || '?'}m</div>
+                        <div class="coords">📍 ${item.lat}, ${item.lng}</div>
+                        <div class="time">${date} · الدقة: ${item.accuracy || '?'} متر</div>
                     </div>
                     <a class="map-link" href="${mapsUrl}" target="_blank">🗺️ عرض على الخريطة</a>
                 </div>`;
             }).join('');
         }
+
+        function changePage(delta) {
+            const total = allData.length;
+            const totalPages = Math.ceil(total / pageSize) || 1;
+            const newPage = currentPage + delta;
+            if (newPage < 1 || newPage > totalPages) return;
+            currentPage = newPage;
+            renderPage();
+            // تسجيل نشاط تغيير الصفحة
+            logActivity('📄 تصفح', `الصفحة ${currentPage}`);
+        }
+
+        // تحديث يدوي (مع تسجيل نشاط)
+        function refreshManual() {
+            logActivity('🔄 تحديث يدوي', 'طلب من المستخدم');
+            // المستمع اللحظي سيقوم بالتحديث تلقائياً، لكننا نعيد تنشيطه للتأكيد
+            db.ref(DB_PATH).once('value').then(() => {
+                // لا حاجة لفعل شيء، المستمع سيعمل
+            });
+        }
+
+        // =============================================
+        // 7. التحقق من كلمة المرور
+        // =============================================
+        function checkPassword() {
+            const pass = document.getElementById('password').value;
+            if (pass === ADMIN_PASSWORD) {
+                document.getElementById('loginBox').style.display = 'none';
+                document.getElementById('dataContainer').style.display = 'block';
+
+                // تسجيل نشاط تسجيل الدخول
+                logActivity('🔑 تسجيل دخول', 'مشرف');
+
+                // بدء تشغيل شاشة التحميل
+                startAdvancedLoader();
+
+                // بدء المستمع اللحظي
+                startRealtimeListener();
+
+                // بدء مستمع سجلات النشاط
+                listenActivityLogs();
+
+                // جلب فوري للبيانات (تحسباً)
+                db.ref(DB_PATH).once('value');
+            } else {
+                logActivity('❌ محاولة دخول فاشلة', 'كلمة مرور خاطئة');
+                alert('⚠️ كلمة المرور خاطئة');
+            }
+        }
+
+        // =============================================
+        // 8. جاهزية الصفحة (Enter في حقل كلمة المرور)
+        // =============================================
+        document.getElementById('password').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') checkPassword();
+        });
+
+        // دالة عامة للوصول من الزر
+        window.checkPassword = checkPassword;
+        window.changePage = changePage;
+        window.refreshManual = refreshManual;
+
+        // بدء شاشة تحميل أولية عند فتح الصفحة (لحين تسجيل الدخول)
+        // لكننا نخفيها فوراً لأننا ننتظر تسجيل الدخول، نضعها مخفية مبدئياً
+        // لكننا سنظهرها عند الضغط على زر تسجيل الدخول كما هو موضح أعلاه.
+        // نجعل شاشة التحميل مخفية مبدئياً حتى لا تزعج المستخدم قبل الدخول.
+        loaderOverlay.classList.add('hidden');
+
+        console.log('✅ لوحة التحكم المتطورة جاهزة (انتظار تسجيل الدخول)');
     </script>
 </body>
 </html>

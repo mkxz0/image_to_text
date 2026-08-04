@@ -3,388 +3,470 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التتبع الحي (بدون خادم)</title>
-    <!-- Leaflet -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- PeerJS -->
-    <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
+    <title>لوحة التحكم المتطورة</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
+        /* (نفس التنسيق المتطور السابق مع إضافة تحسينات) */
         * { box-sizing: border-box; margin: 0; }
         body {
             font-family: 'Segoe UI', Tahoma, sans-serif;
             background: #1e1e1e;
             color: #e0e0e0;
-            padding: 16px;
-            max-width: 1400px;
+            padding: 20px;
+            max-width: 1000px;
             margin: 0 auto;
+            position: relative;
         }
-        h2 { color: #81c995; text-align: center; margin-bottom: 16px; }
-        .setup-box {
+        h2 { color: #81c995; text-align: center; margin-bottom: 20px; }
+
+        /* شاشة التحميل المتطورة */
+        #loaderOverlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(20, 20, 30, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.6s ease;
+            backdrop-filter: blur(4px);
+        }
+        #loaderOverlay.hidden { opacity: 0; pointer-events: none; }
+        .spinner {
+            width: 70px; height: 70px;
+            border: 6px solid #2d2d2d;
+            border-top: 6px solid #81c995;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 25px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loader-text { font-size: 22px; color: #ccc; letter-spacing: 1px; }
+        .loader-sub { margin-top: 12px; font-size: 14px; color: #81c995; background: #2a2a2a; padding: 6px 20px; border-radius: 30px; border: 1px solid #444; min-width: 200px; text-align: center; }
+        .loader-progress { margin-top: 20px; width: 200px; height: 4px; background: #333; border-radius: 4px; overflow: hidden; }
+        .loader-progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #81c995, #4caf86); border-radius: 4px; transition: width 0.5s ease; }
+
+        /* باقي التنسيقات */
+        .password-box {
+            text-align: center;
+            margin: 50px 0;
             background: #2a2a2a;
+            padding: 30px;
             border-radius: 16px;
             border: 1px solid #444;
-            padding: 24px;
-            max-width: 500px;
-            margin: 20px auto;
-            text-align: center;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
         }
-        .setup-box input, .setup-box button {
-            padding: 10px;
+        input[type="password"] {
+            padding: 12px;
             border-radius: 8px;
             border: 1px solid #555;
             background: #1e1e1e;
             color: white;
+            width: 100%;
+            text-align: center;
             font-size: 16px;
-            margin: 5px;
+            margin-bottom: 12px;
         }
-        .setup-box button {
+        button {
+            padding: 10px 24px;
+            border-radius: 8px;
+            border: none;
             background: #81c995;
             color: #000;
-            border: none;
-            font-weight: bold;
             cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: 0.2s;
         }
-        .setup-box button:hover { background: #6ab87d; }
-        .room-id {
-            font-size: 24px;
-            font-family: monospace;
-            background: #0d0d0d;
-            padding: 10px 20px;
-            border-radius: 12px;
-            display: inline-block;
-            margin: 10px 0;
-            color: #8ab4f8;
-            border: 1px solid #333;
-        }
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 16px;
-            margin-top: 16px;
-        }
-        @media (max-width: 768px) { .dashboard-grid { grid-template-columns: 1fr; } }
-        .map-wrapper {
-            background: #2d2d2d;
-            border-radius: 12px;
-            border: 1px solid #444;
-            overflow: hidden;
-            height: 500px;
-        }
-        #map { height: 100%; width: 100%; }
-        .sidebar { display: flex; flex-direction: column; gap: 16px; }
-        .card {
-            background: #2d2d2d;
-            border-radius: 12px;
-            border: 1px solid #444;
-            padding: 16px;
-        }
-        .card h3 { color: #81c995; font-size: 15px; margin-bottom: 10px; }
-        .visitor-list {
-            max-height: 200px;
-            overflow-y: auto;
-            font-size: 13px;
-        }
-        .visitor-item {
-            padding: 6px 8px;
-            border-bottom: 1px solid #3a3a3a;
+        button:hover { background: #6ab87d; transform: scale(1.02); }
+        .toolbar {
             display: flex;
             justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: #2d2d2d;
+            padding: 12px 18px;
+            border-radius: 12px;
+            border: 1px solid #3d3d3d;
         }
-        .visitor-item .id { color: #aaa; font-family: monospace; }
-        .visitor-item .time { color: #888; font-size: 11px; }
-        .online-dot { display: inline-block; width: 8px; height: 8px; background: #34a853; border-radius: 50%; margin-left: 6px; }
+        .badge {
+            background: #394457;
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-size: 13px;
+        }
+        .entry {
+            background: #2d2d2d;
+            border: 1px solid #444;
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            transition: 0.2s;
+        }
+        .entry:hover { border-color: #81c995; background: #333; }
+        .coords { font-family: monospace; font-size: 16px; font-weight: 500; }
+        .time { font-size: 12px; color: #aaa; margin-top: 4px; }
+        .map-link {
+            background: #394457;
+            color: white;
+            padding: 5px 14px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-size: 13px;
+            transition: 0.2s;
+        }
+        .map-link:hover { background: #4a5a77; }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+        .pagination button {
+            background: #394457;
+            color: white;
+            padding: 6px 18px;
+            border-radius: 30px;
+            font-size: 14px;
+        }
+        .pagination button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        .pagination span {
+            background: #1e1e1e;
+            padding: 5px 18px;
+            border-radius: 30px;
+            border: 1px solid #444;
+            font-size: 14px;
+        }
+        .activity-section {
+            margin-top: 40px;
+            background: #252525;
+            border-radius: 12px;
+            border: 1px solid #3a3a3a;
+            padding: 16px;
+        }
+        .activity-section h3 {
+            color: #81c995;
+            font-size: 16px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
         .activity-log {
             max-height: 150px;
             overflow-y: auto;
-            font-size: 12px;
+            font-size: 13px;
             color: #bbb;
             direction: ltr;
             text-align: left;
         }
+        .activity-log::-webkit-scrollbar { width: 4px; }
+        .activity-log::-webkit-scrollbar-thumb { background: #81c995; border-radius: 4px; }
         .log-item {
-            padding: 4px 6px;
+            padding: 5px 8px;
             border-bottom: 1px solid #333;
             display: flex;
             justify-content: space-between;
             font-family: monospace;
         }
-        .badge {
-            background: #394457; padding: 2px 12px; border-radius: 30px; font-size: 12px;
+        .log-item .log-time { color: #888; }
+        .log-item .log-action { color: #d4d4d4; }
+        .empty-msg { text-align: center; color: #777; padding: 20px; }
+
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .entry { flex-direction: column; align-items: stretch; gap: 8px; }
+            .toolbar { flex-direction: column; align-items: stretch; }
         }
-        .flex-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
-        .empty-msg { text-align: center; color: #666; padding: 20px; }
-        .hidden { display: none; }
-        #loaderOverlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(20,20,30,0.95); display: flex; flex-direction: column;
-            align-items: center; justify-content: center; z-index: 9999;
-            transition: opacity 0.6s ease; backdrop-filter: blur(4px);
-        }
-        #loaderOverlay.hidden { opacity: 0; pointer-events: none; }
-        .spinner {
-            width: 60px; height: 60px;
-            border: 5px solid #2d2d2d; border-top: 5px solid #81c995;
-            border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .loader-text { font-size: 20px; color: #ccc; }
-        .loader-sub { margin-top: 8px; font-size: 13px; color: #81c995; }
     </style>
 </head>
 <body>
-    <!-- شاشة تحميل متطورة -->
+
+    <!-- شاشة التحميل -->
     <div id="loaderOverlay">
         <div class="spinner"></div>
-        <div class="loader-text">⏳ جاري تهيئة الاتصال...</div>
-        <div class="loader-sub">انتظار انضمام الزائر...</div>
+        <div class="loader-text" id="loaderText">⏳ جاري الاتصال بقاعدة البيانات</div>
+        <div class="loader-sub" id="loaderSub">تهيئة الاتصال الآمن...</div>
+        <div class="loader-progress">
+            <div class="loader-progress-bar" id="loaderProgressBar"></div>
+        </div>
     </div>
 
-    <h2>📍 لوحة التتبع الحي (P2P)</h2>
+    <h2>📍 لوحة التحكم المتطورة</h2>
 
-    <div id="setupBox" class="setup-box">
-        <h3 style="color:#81c995; margin-bottom:12px;">🔐 إنشاء غرفة جديدة</h3>
-        <button onclick="createRoom()">🆕 إنشاء غرفة</button>
-        <div style="margin-top:12px;">
-            <span style="color:#888;">أو انضم إلى غرفة موجودة:</span><br>
-            <input type="text" id="roomInput" placeholder="أدخل معرف الغرفة">
-            <button onclick="joinRoom()">انضمام</button>
-        </div>
-        <div id="roomDisplay" style="display:none; margin-top:15px;">
-            <div style="color:#888;">معرف الغرفة (شاركه مع الزائر):</div>
-            <div class="room-id" id="roomIdDisplay"></div>
-            <button onclick="copyRoomId()" style="background:#394457;color:white;">📋 نسخ</button>
-        </div>
-        <div id="statusMsg" style="margin-top:10px; color:#f28b82;"></div>
+    <!-- تسجيل الدخول -->
+    <div id="loginBox" class="password-box">
+        <h3 style="margin-bottom:15px;color:#81c995;">🔐 دخول المشرف</h3>
+        <input type="password" id="password" placeholder="أدخل كلمة المرور" autofocus>
+        <button onclick="checkPassword()" style="width:100%;">تسجيل الدخول</button>
     </div>
 
-    <div id="dataContainer" class="hidden">
-        <div class="flex-row">
+    <!-- لوحة البيانات -->
+    <div id="dataContainer" style="display:none;">
+        <div class="toolbar">
             <div>
-                <span class="badge">🟢 المتصلون: <span id="onlineCount">0</span></span>
-                <span class="badge" style="margin-right:8px;">📌 إجمالي الجلسات: <span id="totalSessions">0</span></span>
+                <span class="badge">📌 إجمالي الزوار: <span id="totalCount">0</span></span>
+                <span class="badge" style="margin-right:8px;">⏱️ تحديث لحظي</span>
+            </div>
+            <div>
+                <button onclick="refreshManual()" style="background:#4a5a77;color:white;">🔄 تحديث يدوي</button>
             </div>
         </div>
 
-        <div class="dashboard-grid">
-            <div class="map-wrapper">
-                <div id="map"></div>
-            </div>
-            <div class="sidebar">
-                <div class="card">
-                    <h3>📡 الزوار النشطون</h3>
-                    <div class="visitor-list" id="visitorList">
-                        <div class="empty-msg">لا يوجد زوار متصلون</div>
-                    </div>
-                </div>
-                <div class="card" style="flex:1;">
-                    <h3>📋 سجلات النشاط</h3>
-                    <div class="activity-log" id="activityLog">
-                        <div class="empty-msg">لا توجد سجلات</div>
-                    </div>
-                </div>
+        <div id="entries"></div>
+
+        <div class="pagination" id="paginationControls">
+            <button id="prevPageBtn" onclick="changePage(-1)">◀ السابق</button>
+            <span id="pageInfo">الصفحة 1 / 1</span>
+            <button id="nextPageBtn" onclick="changePage(1)">التالي ▶</button>
+        </div>
+
+        <div class="activity-section">
+            <h3>📋 سجلات النشاط (آخر 10)</h3>
+            <div class="activity-log" id="activityLog">
+                <div class="empty-msg">لا توجد سجلات بعد</div>
             </div>
         </div>
     </div>
 
     <script>
-        // ============================================================
-        // 1. المتغيرات العامة
-        // ============================================================
-        let peer = null;
-        let connections = {}; // visitorId -> dataConnection
-        let visitors = {};   // visitorId -> { lat, lng, accuracy, speed, heading, timestamp, peerId }
-        let map = null;
-        const markers = {};
-        let roomId = '';
+        // =============================================
+        // 1. تهيئة Firebase
+        // =============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBvQWo5HIintxbq9hyz_88kVfebFyfiFuo",
+            databaseURL: "https://imggps-default-rtdb.firebaseio.com",
+            projectId: "imggps"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const DB_PATH = "visitors";
+        const ACTIVITY_PATH = "activity_logs";
+        const ADMIN_PASSWORD = "12345";
 
-        const loader = document.getElementById('loaderOverlay');
-        const setupBox = document.getElementById('setupBox');
-        const dataContainer = document.getElementById('dataContainer');
-        const roomIdDisplay = document.getElementById('roomIdDisplay');
-        const statusMsg = document.getElementById('statusMsg');
+        // =============================================
+        // 2. المتغيرات العامة
+        // =============================================
+        let allData = [];
+        let currentPage = 1;
+        const pageSize = 5;
+        let isFirstLoad = true;
 
-        // ============================================================
-        // 2. الخريطة
-        // ============================================================
-        function initMap() {
-            if (map) return;
-            map = L.map('map').setView([30.0444, 31.2357], 6);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap'
-            }).addTo(map);
-            setTimeout(() => map.invalidateSize(), 500);
+        // عناصر شاشة التحميل
+        const loaderOverlay = document.getElementById('loaderOverlay');
+        const loaderText = document.getElementById('loaderText');
+        const loaderSub = document.getElementById('loaderSub');
+        const loaderProgress = document.getElementById('loaderProgressBar');
+
+        // =============================================
+        // 3. شاشة التحميل المتطورة
+        // =============================================
+        let progressInterval;
+        let progressValue = 0;
+
+        function startAdvancedLoader() {
+            loaderOverlay.classList.remove('hidden');
+            progressValue = 0;
+            loaderProgress.style.width = '0%';
+            loaderText.textContent = '⏳ جاري الاتصال بقاعدة البيانات';
+            loaderSub.textContent = 'تهيئة الاتصال الآمن...';
+
+            clearInterval(progressInterval);
+            progressInterval = setInterval(() => {
+                if (progressValue < 90) {
+                    progressValue += Math.floor(Math.random() * 8) + 2;
+                    if (progressValue > 90) progressValue = 90;
+                    loaderProgress.style.width = progressValue + '%';
+                }
+                if (progressValue < 30) {
+                    loaderText.textContent = '⏳ جاري الاتصال بقاعدة البيانات';
+                    loaderSub.textContent = 'التحقق من الشبكة...';
+                } else if (progressValue < 60) {
+                    loaderText.textContent = '📡 جاري تحميل البيانات';
+                    loaderSub.textContent = 'معالجة الإحداثيات والجداول...';
+                } else if (progressValue < 85) {
+                    loaderText.textContent = '🔄 مزامنة التحديثات اللحظية';
+                    loaderSub.textContent = 'تجهيز لوحة التحكم...';
+                }
+            }, 600);
         }
 
-        function updateMarker(visitorId, data) {
-            if (!map) return;
-            const { lat, lng } = data;
-            if (lat == null || lng == null) return;
-            if (markers[visitorId]) {
-                markers[visitorId].setLatLng([lat, lng]);
-                markers[visitorId].getPopup().setContent(`
-                    <b>🆔 ${visitorId.substring(0, 8)}</b><br>
-                    📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}<br>
-                    🎯 ${data.accuracy || '?'} m<br>
-                    🚀 ${data.speed || 0} km/h<br>
-                    ⏱️ ${new Date(data.timestamp).toLocaleTimeString('ar-EG')}
-                `);
-            } else {
-                const marker = L.marker([lat, lng]).addTo(map);
-                marker.bindPopup(`
-                    <b>🆔 ${visitorId.substring(0, 8)}</b><br>
-                    📍 ${lat.toFixed(6)}, ${lng.toFixed(6)}<br>
-                    🎯 ${data.accuracy || '?'} m<br>
-                    🚀 ${data.speed || 0} km/h<br>
-                    ⏱️ ${new Date(data.timestamp).toLocaleTimeString('ar-EG')}
-                `);
-                markers[visitorId] = marker;
-            }
+        function stopAdvancedLoader() {
+            clearInterval(progressInterval);
+            loaderProgress.style.width = '100%';
+            loaderText.textContent = '✅ تم التحميل بنجاح';
+            loaderSub.textContent = 'لوحة التحكم جاهزة';
+            setTimeout(() => {
+                loaderOverlay.classList.add('hidden');
+            }, 500);
         }
 
-        // ============================================================
-        // 3. تحديث واجهة القائمة والنشاط
-        // ============================================================
-        function updateUI() {
-            const container = document.getElementById('visitorList');
-            const online = Object.keys(visitors).length;
-            document.getElementById('onlineCount').textContent = online;
-            document.getElementById('totalSessions').textContent = online;
+        // =============================================
+        // 4. سجلات النشاط
+        // =============================================
+        function logActivity(action, details = '') {
+            const timestamp = Date.now();
+            const dateStr = new Date(timestamp).toLocaleString('ar-EG');
+            const logRef = db.ref(ACTIVITY_PATH).push();
+            logRef.set({
+                action: action,
+                details: details,
+                timestamp: timestamp,
+                date: dateStr
+            }).catch(err => console.warn('فشل تسجيل النشاط:', err));
+        }
 
-            if (online === 0) {
-                container.innerHTML = '<div class="empty-msg">لا يوجد زوار متصلون</div>';
-                return;
-            }
-            container.innerHTML = Object.entries(visitors)
-                .sort((a, b) => b[1].timestamp - a[1].timestamp)
-                .map(([id, data]) => `
-                    <div class="visitor-item">
-                        <span class="id">${id.substring(0, 8)} <span class="online-dot" style="background:#34a853;"></span></span>
-                        <span class="time">${new Date(data.timestamp).toLocaleTimeString('ar-EG')} · ${data.lat?.toFixed(4) || '?'}</span>
+        function listenActivityLogs() {
+            db.ref(ACTIVITY_PATH).orderByChild('timestamp').limitToLast(10).on('value', (snapshot) => {
+                const container = document.getElementById('activityLog');
+                const data = snapshot.val();
+                if (!data) {
+                    container.innerHTML = '<div class="empty-msg">لا توجد سجلات بعد</div>';
+                    return;
+                }
+                const entries = Object.entries(data).map(([key, val]) => ({ id: key, ...val }));
+                entries.sort((a, b) => b.timestamp - a.timestamp);
+                container.innerHTML = entries.map(item => `
+                    <div class="log-item">
+                        <span class="log-action">${item.action} ${item.details ? ' - ' + item.details : ''}</span>
+                        <span class="log-time">${item.date || new Date(item.timestamp).toLocaleString('ar-EG')}</span>
                     </div>
                 `).join('');
-        }
-
-        function addLog(action, details = '') {
-            const logContainer = document.getElementById('activityLog');
-            const timestamp = new Date().toLocaleTimeString('ar-EG');
-            const entry = document.createElement('div');
-            entry.className = 'log-item';
-            entry.innerHTML = `<span class="log-action">${action} ${details}</span><span class="log-time">${timestamp}</span>`;
-            logContainer.prepend(entry);
-            while (logContainer.children.length > 20) {
-                logContainer.removeChild(logContainer.lastChild);
-            }
-            const empty = logContainer.querySelector('.empty-msg');
-            if (empty) empty.remove();
-        }
-
-        // ============================================================
-        // 4. دوال PeerJS
-        // ============================================================
-        function createRoom() {
-            peer = new Peer({ debug: 2 });
-            peer.on('open', (id) => {
-                roomId = id;
-                roomIdDisplay.textContent = id;
-                document.getElementById('roomDisplay').style.display = 'block';
-                setupBox.querySelector('button').textContent = '⏳ انتظار زائر...';
-                setupBox.querySelector('button').disabled = true;
-                statusMsg.textContent = 'شارك المعرف مع الزائر';
-                statusMsg.style.color = '#8affb2';
-                startListening();
-            });
-            peer.on('error', (err) => {
-                statusMsg.textContent = 'خطأ: ' + err.message;
-                statusMsg.style.color = '#f28b82';
-                console.error(err);
             });
         }
 
-        function startListening() {
-            peer.on('connection', (conn) => {
-                const visitorId = conn.peer;
-                connections[visitorId] = conn;
-                addLog('🟢 زائر متصل', visitorId.substring(0, 8));
+        // =============================================
+        // 5. التحديث التلقائي
+        // =============================================
+        let isListenerActive = false;
 
-                conn.on('data', (data) => {
-                    if (data.type === 'location') {
-                        const { lat, lng, accuracy, speed, heading, timestamp } = data;
-                        visitors[visitorId] = { lat, lng, accuracy, speed, heading, timestamp };
-                        updateMarker(visitorId, visitors[visitorId]);
-                        updateUI();
+        function startRealtimeListener() {
+            if (isListenerActive) return;
+            isListenerActive = true;
+
+            db.ref(DB_PATH).on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (!data) {
+                    allData = [];
+                    document.getElementById('totalCount').textContent = '0';
+                    renderPage();
+                    if (isFirstLoad) {
+                        stopAdvancedLoader();
+                        isFirstLoad = false;
                     }
-                });
-
-                conn.on('close', () => {
-                    delete connections[visitorId];
-                    delete visitors[visitorId];
-                    if (markers[visitorId]) {
-                        map.removeLayer(markers[visitorId]);
-                        delete markers[visitorId];
-                    }
-                    addLog('🔴 زائر غير متصل', visitorId.substring(0, 8));
-                    updateUI();
-                });
+                    return;
+                }
+                const newData = Object.entries(data).map(([key, val]) => ({ id: key, ...val }));
+                newData.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                allData = newData;
+                document.getElementById('totalCount').textContent = allData.length;
+                renderPage();
+                if (isFirstLoad) {
+                    stopAdvancedLoader();
+                    isFirstLoad = false;
+                }
+            }, (error) => {
+                console.error('خطأ في المستمع:', error);
+                document.getElementById('entries').innerHTML = '<p style="color:red;">⚠️ خطأ في الاتصال اللحظي، جارٍ المحاولة مجدداً...</p>';
+                if (isFirstLoad) {
+                    stopAdvancedLoader();
+                    isFirstLoad = false;
+                }
             });
-
-            // إخفاء شاشة التحميل بعد 1 ثانية
-            setTimeout(() => {
-                loader.classList.add('hidden');
-                setupBox.style.display = 'none';
-                dataContainer.classList.remove('hidden');
-                initMap();
-            }, 1000);
         }
 
-        function joinRoom() {
-            const id = document.getElementById('roomInput').value.trim();
-            if (!id) {
-                statusMsg.textContent = 'الرجاء إدخال معرف الغرفة';
-                statusMsg.style.color = '#f28b82';
+        // =============================================
+        // 6. الترقيم
+        // =============================================
+        function renderPage() {
+            const container = document.getElementById('entries');
+            const total = allData.length;
+            const totalPages = Math.ceil(total / pageSize) || 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+            const start = (currentPage - 1) * pageSize;
+            const end = Math.min(start + pageSize, total);
+            const pageData = allData.slice(start, end);
+
+            document.getElementById('pageInfo').textContent = `الصفحة ${currentPage} / ${totalPages}`;
+            document.getElementById('prevPageBtn').disabled = (currentPage === 1);
+            document.getElementById('nextPageBtn').disabled = (currentPage === totalPages);
+
+            if (pageData.length === 0) {
+                container.innerHTML = '<div class="empty-msg">🚫 لا توجد زيارات مسجلة</div>';
                 return;
             }
-            // فتح نافذة الزائر مع المعرف
-            const url = `./index.html?room=${encodeURIComponent(id)}`;
-            window.open(url, '_blank');
-            statusMsg.textContent = 'تم فتح صفحة الزائر، انتظر الاتصال...';
-            statusMsg.style.color = '#8affb2';
-            // نبدأ الاستماع في هذه النافذة أيضاً (للمشرف)
-            // ولكننا سنحتاج إلى Peer جديد كمشرف متصل بنفس الغرفة
-            // الحل: المشرف ينشئ Peer جديد ويتصل بالغرفة بنفسه، لكن الأسهل أن المشرف يفتح صفحة الزائر في تبويب آخر.
-            // لكننا سنقوم بإنشاء Peer جديد والاستماع كما في createRoom، مع إضافة منطق أن يكون المشرف هو المضيف.
-            // ولكن قد يسبب تعقيداً. بدلاً من ذلك، نجعل المشرف ينشئ الغرفة كما في createRoom، والزائر يدخل المعرف.
-            // لذا نضغط على "إنشاء غرفة" أولاً.
-            alert('للاستخدام الصحيح: اضغط "إنشاء غرفة" أولاً، ثم شارك المعرف مع الزائر.');
+            container.innerHTML = pageData.map(item => {
+                const date = new Date(item.timestamp).toLocaleString('ar-EG');
+                const mapsUrl = `https://www.google.com/maps?q=${item.lat},${item.lng}`;
+                return `
+                <div class="entry">
+                    <div>
+                        <div class="coords">📍 ${item.lat}, ${item.lng}</div>
+                        <div class="time">${date} · الدقة: ${item.accuracy || '?'} متر</div>
+                    </div>
+                    <a class="map-link" href="${mapsUrl}" target="_blank">🗺️ عرض على الخريطة</a>
+                </div>`;
+            }).join('');
         }
 
-        function copyRoomId() {
-            const id = roomIdDisplay.textContent;
-            navigator.clipboard.writeText(id).then(() => {
-                statusMsg.textContent = 'تم نسخ المعرف!';
-                statusMsg.style.color = '#8affb2';
-            }).catch(() => {
-                // طريقة بديلة
-                const range = document.createRange();
-                range.selectNode(roomIdDisplay);
-                window.getSelection().removeAllRanges();
-                window.getSelection().addRange(range);
-                document.execCommand('copy');
-                statusMsg.textContent = 'تم نسخ المعرف!';
-            });
+        function changePage(delta) {
+            const total = allData.length;
+            const totalPages = Math.ceil(total / pageSize) || 1;
+            const newPage = currentPage + delta;
+            if (newPage < 1 || newPage > totalPages) return;
+            currentPage = newPage;
+            renderPage();
+            logActivity('📄 تصفح', `الصفحة ${currentPage}`);
         }
 
-        // ============================================================
-        // 5. ربط الدوال للاستخدام في الأزرار
-        // ============================================================
-        window.createRoom = createRoom;
-        window.joinRoom = joinRoom;
-        window.copyRoomId = copyRoomId;
+        function refreshManual() {
+            logActivity('🔄 تحديث يدوي', 'طلب من المستخدم');
+            db.ref(DB_PATH).once('value');
+        }
 
-        // إخفاء شاشة التحميل في البداية
-        loader.classList.add('hidden');
+        // =============================================
+        // 7. التحقق من كلمة المرور
+        // =============================================
+        function checkPassword() {
+            const pass = document.getElementById('password').value;
+            if (pass === ADMIN_PASSWORD) {
+                document.getElementById('loginBox').style.display = 'none';
+                document.getElementById('dataContainer').style.display = 'block';
+                logActivity('🔑 تسجيل دخول', 'مشرف');
+                startAdvancedLoader();
+                startRealtimeListener();
+                listenActivityLogs();
+                db.ref(DB_PATH).once('value');
+            } else {
+                logActivity('❌ محاولة دخول فاشلة', 'كلمة مرور خاطئة');
+                alert('⚠️ كلمة المرور خاطئة');
+            }
+        }
 
-        console.log('✅ لوحة المشرف جاهزة');
+        document.getElementById('password').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') checkPassword();
+        });
+
+        window.checkPassword = checkPassword;
+        window.changePage = changePage;
+        window.refreshManual = refreshManual;
+
+        loaderOverlay.classList.add('hidden');
+        console.log('✅ لوحة التحكم جاهزة (انتظار تسجيل الدخول)');
     </script>
 </body>
 </html>

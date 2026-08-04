@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - الإحداثيات</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: #1e1e1e;
+            color: #e0e0e0;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h2 { color: #81c995; text-align: center; }
+        .entry {
+            background: #2d2d2d;
+            border: 1px solid #444;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .coords {
+            font-family: monospace;
+            font-size: 16px;
+        }
+        .time {
+            font-size: 12px;
+            color: #aaa;
+        }
+        .map-link {
+            background: #394457;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .loading { text-align: center; margin-top: 30px; }
+        .password-box {
+            text-align: center;
+            margin: 30px 0;
+        }
+        input[type="password"] {
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #555;
+            background: #333;
+            color: white;
+            width: 250px;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            background: #81c995;
+            color: #000;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h2>📍 سجل زوار الموقع</h2>
+    <div id="loginBox" class="password-box">
+        <input type="password" id="password" placeholder="أدخل كلمة المرور">
+        <button onclick="checkPassword()">عرض</button>
+    </div>
+
+    <div id="dataContainer" style="display:none;">
+        <button onclick="refreshData()" style="margin-bottom:15px;">تحديث</button>
+        <div id="entries"></div>
+    </div>
+
+    <div class="loading" id="loading" style="display:none;">جاري التحميل...</div>
+
+    <script>
+        // بيانات مشروعك
+        const firebaseConfig = {
+            apiKey: "AIzaSyBvQWo5HIintxbq9hyz_88kVfebFyfiFuo",
+            databaseURL: "https://imggps-default-rtdb.firebaseio.com",
+            projectId: "imggps"
+        };
+
+        const DB_PATH = "visitors";
+        const ADMIN_PASSWORD = "12345"; // غيّرها لكلمة سر خاصة بك
+
+        let allData = [];
+
+        function checkPassword() {
+            const pass = document.getElementById('password').value;
+            if (pass === ADMIN_PASSWORD) {
+                document.getElementById('loginBox').style.display = 'none';
+                document.getElementById('dataContainer').style.display = 'block';
+                refreshData();
+            } else {
+                alert('كلمة المرور خاطئة');
+            }
+        }
+
+        function refreshData() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('entries').innerHTML = '';
+            fetch(`${firebaseConfig.databaseURL}/${DB_PATH}.json`)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                if (!data) {
+                    document.getElementById('entries').innerHTML = '<p>لا توجد بيانات بعد.</p>';
+                    return;
+                }
+                allData = Object.entries(data).map(([key, val]) => ({ id: key, ...val }));
+                allData.sort((a, b) => b.timestamp - a.timestamp);
+                renderEntries(allData);
+            })
+            .catch(err => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('entries').innerHTML = '<p style="color:red;">فشل الاتصال بقاعدة البيانات</p>';
+                console.error(err);
+            });
+        }
+
+        function renderEntries(data) {
+            const container = document.getElementById('entries');
+            container.innerHTML = data.map(item => {
+                const date = new Date(item.timestamp).toLocaleString('ar-EG');
+                const mapsUrl = `https://www.google.com/maps?q=${item.lat},${item.lng}`;
+                return `
+                <div class="entry">
+                    <div>
+                        <div class="coords">${item.lat}, ${item.lng}</div>
+                        <div class="time">${date} · الدقة: ±${item.accuracy || '?'}m</div>
+                    </div>
+                    <a class="map-link" href="${mapsUrl}" target="_blank">🗺️ عرض على الخريطة</a>
+                </div>`;
+            }).join('');
+        }
+    </script>
+</body>
+</html>

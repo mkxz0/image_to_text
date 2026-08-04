@@ -4,19 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>مشاركة الموقع الحي</title>
+    <!-- PeerJS -->
+    <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: #0d0d0d;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             color: #fff;
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 20px;
-            text-align: center;
         }
         .container {
             background: #1a1a1a;
@@ -26,6 +26,7 @@
             width: 100%;
             box-shadow: 0 20px 60px rgba(0,0,0,0.8);
             border: 1px solid #333;
+            text-align: center;
         }
         .status-badge {
             display: inline-block;
@@ -45,7 +46,6 @@
             padding: 16px;
             border-radius: 16px;
             margin: 12px 0;
-            letter-spacing: 1px;
             color: #8ab4f8;
             border: 1px solid #2a2a2a;
         }
@@ -72,8 +72,7 @@
             color: #8ab4f8;
         }
         .pulse-dot {
-            width: 12px;
-            height: 12px;
+            width: 12px; height: 12px;
             background: #34a853;
             border-radius: 50%;
             animation: pulse 1.5s infinite;
@@ -96,77 +95,93 @@
         .btn-danger { background: #d93025; color: #fff; }
         .btn-danger:hover { background: #b3261e; }
         .sub-text { color: #666; font-size: 13px; margin-top: 14px; }
-        .hidden { display: none !important; }
+        .input-group {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .input-group input {
+            flex: 1;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #444;
+            background: #111;
+            color: white;
+            font-size: 16px;
+            text-align: center;
+            min-width: 150px;
+        }
+        .input-group button {
+            flex: 0 0 auto;
+            padding: 12px 24px;
+        }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
-    <div class="container" id="app">
-        <div class="status-badge" id="statusBadge">🟢 جاري البث المباشر</div>
-        
-        <div style="font-size: 14px; color: #888; margin-bottom: 4px;">الإحداثيات الحالية</div>
-        <div class="coords-display" id="coordsDisplay">— , —</div>
+    <div class="container">
+        <h3 style="color:#8ab4f8; margin-bottom:16px;">📍 مشاركة الموقع الحي</h3>
 
-        <div class="info-grid">
-            <div class="info-card">
-                <div class="label">الدقة</div>
-                <div class="value" id="accuracy">—</div>
+        <div id="joinBox">
+            <div style="color:#888; margin-bottom:8px;">أدخل معرف الغرفة الذي أعطاك إياه المشرف:</div>
+            <div class="input-group">
+                <input type="text" id="roomInput" placeholder="معرف الغرفة">
+                <button onclick="connectToRoom()" style="background:#81c995; color:#000;">اتصال</button>
             </div>
-            <div class="info-card">
-                <div class="label">السرعة</div>
-                <div class="value" id="speed">0 km/h</div>
-            </div>
-            <div class="info-card">
-                <div class="label">الاتجاه</div>
-                <div class="value" id="heading">—</div>
-            </div>
+            <div id="joinError" style="color:#f28b82; margin-top:8px;"></div>
         </div>
 
-        <div class="live-indicator">
-            <span class="pulse-dot"></span>
-            <span>مدة البث: <strong id="timer">00:00</strong></span>
+        <div id="trackingBox" class="hidden">
+            <div class="status-badge" id="statusBadge">🟢 جاري البث المباشر</div>
+            <div style="font-size: 14px; color: #888; margin-bottom: 4px;">الإحداثيات الحالية</div>
+            <div class="coords-display" id="coordsDisplay">— , —</div>
+            <div class="info-grid">
+                <div class="info-card"><div class="label">الدقة</div><div class="value" id="accuracy">—</div></div>
+                <div class="info-card"><div class="label">السرعة</div><div class="value" id="speed">0 km/h</div></div>
+                <div class="info-card"><div class="label">الاتجاه</div><div class="value" id="heading">—</div></div>
+            </div>
+            <div class="live-indicator">
+                <span class="pulse-dot"></span>
+                <span>مدة البث: <strong id="timer">00:00</strong></span>
+            </div>
+            <button class="btn btn-danger" id="stopBtn" onclick="stopSharing()">⏹️ إيقاف المشاركة</button>
+            <div class="sub-text">يتم تحديث موقعك تلقائياً كل 3 ثوانٍ</div>
         </div>
-
-        <button class="btn btn-danger" id="stopBtn" onclick="stopSharing()">⏹️ إيقاف المشاركة</button>
-        <div class="sub-text">يتم تحديث موقعك تلقائياً كل 3 ثوانٍ</div>
     </div>
 
     <script>
         // ============================================================
-        // 1. الإعدادات والمتغيرات
+        // 1. المتغيرات
         // ============================================================
-        const firebaseConfig = {
-            apiKey: "AIzaSyBvQWo5HIintxbq9hyz_88kVfebFyfiFuo",
-            databaseURL: "https://imggps-default-rtdb.firebaseapi.io",
-            projectId: "imggps"
-        };
-        // (ملاحظة: استخدم قاعدة البيانات الصحيحة، لقد أصلحت النطاق)
-        // التصحيح: بعض المستخدمين ينسخون النطاق خطأ. استخدم نفس الرابط السابق.
-        // سأستخدم databaseURL من الإعدادات السابقة: https://imggps-default-rtdb.firebaseio.com
-        const DB_URL = "https://imggps-default-rtdb.firebaseio.com";
-        const DB_PATH = "live_visitors";
-
-        // متغيرات الجلسة
-        const SESSION_ID = localStorage.getItem('live_session_id') || `user_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
-        localStorage.setItem('live_session_id', SESSION_ID);
-
+        let peer = null;
+        let connection = null;
+        let roomId = '';
         let watchId = null;
         let startTime = Date.now();
         let timerInterval = null;
         let isActive = true;
         let lastSentData = null;
-        const UPDATE_INTERVAL = 3000; // 3 ثوانٍ
 
-        // عناصر الواجهة
+        const joinBox = document.getElementById('joinBox');
+        const trackingBox = document.getElementById('trackingBox');
         const statusBadge = document.getElementById('statusBadge');
         const coordsDisplay = document.getElementById('coordsDisplay');
         const accuracyEl = document.getElementById('accuracy');
         const speedEl = document.getElementById('speed');
         const headingEl = document.getElementById('heading');
         const timerEl = document.getElementById('timer');
+        const joinError = document.getElementById('joinError');
 
         // ============================================================
-        // 2. دوال المساعدة
+        // 2. دوال مساعدة
         // ============================================================
+        function setStatus(text, isError = false) {
+            statusBadge.textContent = text;
+            statusBadge.className = `status-badge${isError ? ' inactive' : ''}`;
+        }
+
         function updateTimer() {
             const elapsed = Math.floor((Date.now() - startTime) / 1000);
             const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
@@ -174,83 +189,96 @@
             timerEl.textContent = `${mins}:${secs}`;
         }
 
-        function formatCoord(val) { return Number(val).toFixed(7); }
+        // ============================================================
+        // 3. الاتصال بالمشرف
+        // ============================================================
+        function connectToRoom() {
+            const id = document.getElementById('roomInput').value.trim();
+            if (!id) {
+                joinError.textContent = 'الرجاء إدخال معرف الغرفة';
+                return;
+            }
+            roomId = id;
+            joinError.textContent = '';
+            joinBox.style.display = 'none';
+            trackingBox.classList.remove('hidden');
 
-        function setStatus(text, isError = false) {
-            statusBadge.textContent = text;
-            statusBadge.className = `status-badge${isError ? ' inactive' : ''}`;
+            // إنشاء Peer جديد
+            peer = new Peer({ debug: 2 });
+            peer.on('open', (myId) => {
+                // الاتصال بمعرف المشرف
+                connection = peer.connect(roomId);
+                connection.on('open', () => {
+                    setStatus('🟢 متصل، جاري البث');
+                    startTracking();
+                });
+                connection.on('error', (err) => {
+                    setStatus('⚠️ خطأ في الاتصال', true);
+                    console.error(err);
+                });
+                connection.on('close', () => {
+                    setStatus('🔴 انقطع الاتصال', true);
+                    stopSharing();
+                });
+            });
+            peer.on('error', (err) => {
+                setStatus('⚠️ فشل الاتصال', true);
+                joinError.textContent = 'تعذر الاتصال: ' + err.message;
+                console.error(err);
+            });
         }
 
         // ============================================================
-        // 3. إرسال البيانات إلى Firebase (تحديث مستمر)
-        // ============================================================
-        function sendLocation(position) {
-            if (!isActive) return;
-
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-            const acc = position.coords.accuracy ? Math.round(position.coords.accuracy) : null;
-            const speed = position.coords.speed ? (position.coords.speed * 3.6).toFixed(1) : 0; // m/s -> km/h
-            const heading = position.coords.heading ? Math.round(position.coords.heading) : null;
-
-            // تحديث الواجهة
-            coordsDisplay.textContent = `${formatCoord(lat)}, ${formatCoord(lng)}`;
-            accuracyEl.textContent = acc ? `${acc} m` : '—';
-            speedEl.textContent = speed > 0 ? `${speed} km/h` : '0 km/h';
-            headingEl.textContent = heading ? `${heading}°` : '—';
-            setStatus('🟢 جاري البث المباشر');
-
-            const payload = {
-                lat: lat,
-                lng: lng,
-                accuracy: acc,
-                speed: speed,
-                heading: heading,
-                timestamp: Date.now(),
-                sessionId: SESSION_ID,
-                userAgent: navigator.userAgent.substring(0, 150),
-                isActive: true
-            };
-
-            // منع الإرسال المتكرر بنفس البيانات (تحسين الأداء)
-            const dataStr = JSON.stringify(payload);
-            if (lastSentData === dataStr) return;
-            lastSentData = dataStr;
-
-            // إرسال إلى Firebase عبر PUT (استبدال الموقع الحالي لهذه الجلسة)
-            fetch(`${DB_URL}/${DB_PATH}/${SESSION_ID}.json`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            }).catch(err => console.warn('فشل إرسال التحديث:', err));
-        }
-
-        // ============================================================
-        // 4. تشغيل تتبع الموقع (watchPosition)
+        // 4. تتبع الموقع وإرساله
         // ============================================================
         function startTracking() {
             if (!navigator.geolocation) {
                 setStatus('❌ المتصفح لا يدعم GPS', true);
                 return;
             }
-
-            setStatus('⏳ جاري الاتصال بـ GPS...');
+            navigator.geolocation.getCurrentPosition(() => {}, () => {}, {});
             watchId = navigator.geolocation.watchPosition(
-                (pos) => {
-                    sendLocation(pos);
-                },
+                (pos) => sendLocation(pos),
                 (err) => {
                     console.warn('GPS error:', err.message);
-                    setStatus('⚠️ مشكلة في GPS، جاري المحاولة...', true);
-                    if (err.code === 1) {
-                        setStatus('🚫 تم رفض الإذن، افتح الإعدادات', true);
-                    }
+                    setStatus('⚠️ مشكلة في GPS', true);
+                    if (err.code === 1) setStatus('🚫 تم رفض الإذن', true);
                 },
                 { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
             );
-
-            // مؤقت التحديث
             timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function sendLocation(position) {
+            if (!isActive || !connection || connection.peerConnection?.iceConnectionState !== 'connected') return;
+
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            const acc = position.coords.accuracy ? Math.round(position.coords.accuracy) : null;
+            const speed = position.coords.speed ? (position.coords.speed * 3.6).toFixed(1) : 0;
+            const heading = position.coords.heading ? Math.round(position.coords.heading) : null;
+
+            // تحديث الواجهة
+            coordsDisplay.textContent = `${lat.toFixed(7)}, ${lng.toFixed(7)}`;
+            accuracyEl.textContent = acc ? `${acc} m` : '—';
+            speedEl.textContent = speed > 0 ? `${speed} km/h` : '0 km/h';
+            headingEl.textContent = heading ? `${heading}°` : '—';
+            setStatus('🟢 جاري البث المباشر');
+
+            const data = {
+                type: 'location',
+                lat, lng,
+                accuracy: acc,
+                speed: parseFloat(speed),
+                heading,
+                timestamp: Date.now()
+            };
+
+            const dataStr = JSON.stringify(data);
+            if (lastSentData === dataStr) return;
+            lastSentData = dataStr;
+
+            connection.send(data);
         }
 
         // ============================================================
@@ -259,45 +287,30 @@
         function stopSharing() {
             if (!isActive) return;
             isActive = false;
-            if (watchId) {
-                navigator.geolocation.clearWatch(watchId);
-                watchId = null;
-            }
-            if (timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-            }
-
+            if (watchId) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+            if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
             setStatus('⏹️ تم إيقاف البث', true);
             document.getElementById('stopBtn').textContent = '🔁 إعادة التشغيل';
-            document.getElementById('stopBtn').className = 'btn';
             document.getElementById('stopBtn').onclick = () => window.location.reload();
-
-            // تحديث قاعدة البيانات بأن الجلسة غير نشطة
-            fetch(`${DB_URL}/${DB_PATH}/${SESSION_ID}/isActive.json`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(false)
-            }).catch(() => {});
+            if (connection) connection.close();
         }
 
         // ============================================================
-        // 6. بدء التشغيل
+        // 6. بدء التشغيل (قراءة المعرف من الرابط)
         // ============================================================
-        startTracking();
-
-        // عند إغلاق الصفحة أو تحديثها، نعلم أن الجلسة انتهت
-        window.addEventListener('beforeunload', () => {
-            if (isActive) {
-                fetch(`${DB_URL}/${DB_PATH}/${SESSION_ID}/isActive.json`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(false)
-                }).catch(() => {});
+        window.onload = function() {
+            const params = new URLSearchParams(window.location.search);
+            const room = params.get('room');
+            if (room) {
+                document.getElementById('roomInput').value = room;
+                connectToRoom();
             }
-        });
+        };
 
-        console.log('📍 جلسة البث الحي:', SESSION_ID);
+        window.connectToRoom = connectToRoom;
+        window.stopSharing = stopSharing;
+
+        console.log('📍 صفحة الزائر جاهزة');
     </script>
 </body>
 </html>

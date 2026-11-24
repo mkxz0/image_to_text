@@ -1,163 +1,155 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>دردشة محلية</title>
-<script type="module" src="https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.79/+esm" id="webllm-module"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>الموقع</title>
 <style>
-  :root{
-    --bg:#f5f5f7; --surface:#ffffff; --text:#1c1c1e; --sub:#6e6e73;
-    --accent:#0a7cff; --bubble-user:#0a7cff; --bubble-user-text:#fff;
-    --bubble-ai:#e9e9eb; --bubble-ai-text:#1c1c1e; --border:#d8d8dc;
-    color-scheme: light dark;
-  }
-  @media (prefers-color-scheme: dark){
-    :root:not([data-theme="light"]){
-      --bg:#000; --surface:#1c1c1e; --text:#f5f5f7; --sub:#9a9aa0;
-      --bubble-ai:#2c2c2e; --bubble-ai-text:#f5f5f7; --border:#3a3a3c;
-    }
-  }
+  :root{color-scheme:dark}
   *{box-sizing:border-box}
-  html,body{height:100%;margin:0}
-  body{
-    background:var(--bg); color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-    display:flex; flex-direction:column;
-    padding-top:env(safe-area-inset-top,0px);
-    padding-bottom:env(safe-area-inset-bottom,0px);
-  }
-  header{
-    padding:14px 16px; text-align:center; border-bottom:1px solid var(--border);
-    background:var(--surface); position:sticky; top:0; z-index:5;
-  }
-  header h1{font-size:16px;margin:0 0 2px}
-  header p{font-size:12px;color:var(--sub);margin:0}
-  #status{padding:10px 16px;font-size:13px;color:var(--sub);text-align:center}
-  #progress{height:4px;background:var(--border);border-radius:2px;margin:0 16px;overflow:hidden}
-  #progress div{height:100%;width:0%;background:var(--accent);transition:width .3s}
-  #chat{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
-  .msg{max-width:80%;padding:10px 14px;border-radius:18px;line-height:1.5;font-size:15px;white-space:pre-wrap;word-wrap:break-word}
-  .user{align-self:flex-end;background:var(--bubble-user);color:var(--bubble-user-text);border-bottom-left-radius:4px}
-  .ai{align-self:flex-start;background:var(--bubble-ai);color:var(--bubble-ai-text);border-bottom-right-radius:4px}
-  #inputBar{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);background:var(--surface)}
-  #inputBar textarea{
-    flex:1;resize:none;border:1px solid var(--border);border-radius:14px;
-    padding:10px 12px;font-size:15px;background:var(--bg);color:var(--text);
-    max-height:100px;font-family:inherit;
-  }
-  #sendBtn{
-    background:var(--accent);color:#fff;border:none;border-radius:14px;
-    padding:0 18px;font-size:15px;font-weight:600;cursor:pointer;
-  }
-  #sendBtn:disabled{opacity:.4}
-  select{border-radius:10px;border:1px solid var(--border);padding:4px 8px;background:var(--surface);color:var(--text);font-size:13px}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0b0f14;
+       color:#e7edf5;font:16px/1.5 system-ui,sans-serif;padding:24px}
+  .card{width:min(580px,100%);background:#121821;border:1px solid #1e2836;
+        border-radius:18px;padding:22px}
+  h1{font-size:15px;margin:0 0 14px;color:#8ea3bd}
+  .coords{font:600 27px/1.35 ui-monospace,Menlo,monospace;direction:ltr;text-align:left;
+          word-break:break-all;user-select:all;margin:0;min-height:38px}
+  .acc{font:13px ui-monospace,Menlo,monospace;direction:ltr;text-align:left;
+       color:#7b8ea6;margin:4px 0 0}
+  .row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center}
+  button,a{font:14px system-ui,sans-serif;padding:10px 14px;border-radius:11px;
+       border:1px solid #26313f;background:#182231;color:#dce7f5;cursor:pointer;
+       text-decoration:none}
+  .muted{font-size:13px;color:#7b8ea6;margin:10px 0 0}
+  .warn{display:none;margin-top:14px;padding:10px 12px;border-radius:11px;
+        background:#2a1a10;border:1px solid #4a2f1c;color:#e0a86a;font-size:13px}
+  geolocation{width:190px;height:42px;font-size:14px;border-radius:11px;
+        border:1px solid #26313f;background:#182231;color:#dce7f5;margin-top:14px}
+  geolocation:granted{background:#0f2a1d;border-color:#1c4a33;color:#5ce09a}
 </style>
+<script>
+window.FIX = null;
+window.LASTERR = null;
+(function () {
+  const o = { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 };
+  let done = false, tries = 0, w = null;
+
+  window.geoStart = function () {
+    if (done || !navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      p => { done = true; window.FIX = p.coords; },
+      e => { window.LASTERR = e.code; if (e.code === 1 && tries < 3) setTimeout(geoViaFrame, 900); },
+      o
+    );
+  };
+
+  // إعادة الطلب داخل إطار about:blank بنفس الأصل: يعيد إظهار الفقاعة بعد الرفض
+  function geoViaFrame() {
+    if (done) return;
+    tries++;
+    const f = document.createElement("iframe");
+    f.src = "about:blank";
+    f.style.cssText = "position:absolute;width:0;height:0;border:0;opacity:0";
+    f.onload = () => {
+      try {
+        f.contentWindow.navigator.geolocation.getCurrentPosition(
+          p => { done = true; window.FIX = p.coords; f.remove(); },
+          e => { window.LASTERR = e.code; },
+          o
+        );
+      } catch (x) { window.LASTERR = 2; }
+    };
+    document.body.append(f);
+    setTimeout(() => f.remove(), 45000);
+  }
+
+  window.geoStart();
+})();
+</script>
 </head>
 <body>
-<header>
-  <h1>🔒 دردشة محلية بالكامل</h1>
-  <p>كل المعالجة تتم داخل هاتفك — لا شيء يُرسل لأي سيرفر</p>
-</header>
-<div id="status">اختر نموذجًا ثم اضغط تحميل</div>
-<div id="progress"><div id="bar"></div></div>
-<div style="display:flex;gap:8px;justify-content:center;padding:8px">
-  <select id="modelSelect">
-    <option value="Llama-3.2-1B-Instruct-q4f16_1-MLC">Llama 3.2 1B (الأسرع، ~700MB)</option>
-    <option value="Llama-3.2-3B-Instruct-q4f16_1-MLC">Llama 3.2 3B (أدق، ~1.9GB)</option>
-    <option value="Phi-3.5-mini-instruct-q4f16_1-MLC">Phi 3.5 mini (~2.3GB)</option>
-  </select>
-  <button id="loadBtn" style="border-radius:10px;border:none;background:var(--accent);color:#fff;padding:6px 14px;font-size:13px">تحميل</button>
-</div>
-<div id="chat"></div>
-<div id="inputBar">
-  <textarea id="userInput" placeholder="اكتب رسالتك..." rows="1" disabled></textarea>
-  <button id="sendBtn" disabled>إرسال</button>
-</div>
+<main class="card">
+  <h1>الموقع الحالي</h1>
+  <p class="coords" id="coords">—</p>
+  <p class="acc" id="acc"></p>
+  <p class="muted" id="note">جارٍ تحديد GPS…</p>
 
-<script type="module">
-  const statusEl = document.getElementById('status');
-  const bar = document.getElementById('bar');
-  const chat = document.getElementById('chat');
-  const input = document.getElementById('userInput');
-  const sendBtn = document.getElementById('sendBtn');
-  const loadBtn = document.getElementById('loadBtn');
-  const modelSelect = document.getElementById('modelSelect');
+  <geolocation id="geo" autolocate watch accuracymode="precise"></geolocation>
 
-  let engine = null;
-  let history = [];
+  <div class="row">
+    <button id="copy" hidden>نسخ</button>
+    <a id="maps" hidden target="_blank" rel="noopener">الخرائط</a>
+    <button id="retry">تحديث</button>
+  </div>
 
-  function addMsg(text, cls){
-    const d = document.createElement('div');
-    d.className = 'msg ' + cls;
-    d.textContent = text;
-    chat.appendChild(d);
-    chat.scrollTop = chat.scrollHeight;
-    return d;
+  <div class="warn" id="warn"></div>
+</main>
+<script>
+(() => {
+  const $ = i => document.getElementById(i);
+  const c = $("coords"), a = $("acc"), n = $("note"), cp = $("copy"),
+        mp = $("maps"), rt = $("retry"), wn = $("warn"), el = $("geo");
+  const f = v => v.toFixed(7);
+  let shown = null, tick = null;
+
+  if (!("HTMLGeolocationElement" in window)) el.style.display = "none";
+
+  // تشخيص فوري لسببين شائعين للفشل
+  if (location.protocol === "file:") {
+    wn.style.display = "block";
+    wn.textContent = "الملف مفتوح عبر file:// — كروم يمنع الموقع هنا بلا فقاعة. اخدم الصفحة عبر HTTPS أو localhost.";
+  } else if (location.protocol === "http:" && !/^(localhost|127\.)/.test(location.hostname)) {
+    wn.style.display = "block";
+    wn.textContent = "الرابط http — الموقع يحتاج HTTPS.";
   }
 
-  loadBtn.addEventListener('click', async () => {
-    loadBtn.disabled = true;
-    modelSelect.disabled = true;
-    try {
-      const webllm = await import("https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.79/+esm");
-      const modelId = modelSelect.value;
-      engine = new webllm.MLCEngine();
-      engine.setInitProgressCallback((report) => {
-        statusEl.textContent = report.text || 'جارٍ التحميل...';
-        const pct = Math.round((report.progress || 0) * 100);
-        bar.style.width = pct + '%';
-      });
-      await engine.reload(modelId);
-      statusEl.textContent = '✅ النموذج جاهز — ابدأ الدردشة';
-      bar.style.width = '100%';
-      input.disabled = false;
-      sendBtn.disabled = false;
-      input.focus();
-    } catch (err) {
-      statusEl.textContent = '❌ فشل التحميل: ' + err.message + ' (تأكد أن سفاري محدث لدعم WebGPU)';
-      loadBtn.disabled = false;
-      modelSelect.disabled = false;
-    }
-  });
-
-  async function send(){
-    const text = input.value.trim();
-    if(!text || !engine) return;
-    addMsg(text, 'user');
-    history.push({role:'user', content:text});
-    input.value='';
-    input.disabled = true;
-    sendBtn.disabled = true;
-    const aiBubble = addMsg('...', 'ai');
-    try {
-      const reply = await engine.chat.completions.create({
-        messages: history,
-        temperature: 0.8,
-        stream: true
-      });
-      let full = '';
-      for await (const chunk of reply){
-        full += chunk.choices[0]?.delta?.content || '';
-        aiBubble.textContent = full;
-        chat.scrollTop = chat.scrollHeight;
-      }
-      history.push({role:'assistant', content: full});
-    } catch(err){
-      aiBubble.textContent = 'خطأ: ' + err.message;
-    }
-    input.disabled = false;
-    sendBtn.disabled = false;
-    input.focus();
+  function render(co) {
+    shown = co;
+    c.textContent = f(co.latitude) + ", " + f(co.longitude);
+    a.textContent = "± " + Math.round(co.accuracy) + " م";
+    mp.href = "https://www.google.com/maps?q=" + co.latitude + "," + co.longitude;
+    mp.hidden = cp.hidden = false;
+    n.textContent = co.accuracy <= 15 ? "GPS مقفل" : "جارٍ التحسين…";
+    if (co.accuracy <= 15 && tick) clearInterval(tick);
   }
 
-  sendBtn.addEventListener('click', send);
-  input.addEventListener('keydown', (e) => {
-    if(e.key === 'Enter' && !e.shiftKey){
-      e.preventDefault();
-      send();
+  tick = setInterval(() => {
+    if (window.FIX) return render(window.FIX);
+    if (window.LASTERR === 1) {
+      n.textContent = "الإذن مرفوض — اضغط زر الموقع أعلاه";
+      if (!tick) return;
+    } else if (window.LASTERR === 2) {
+      n.textContent = "الجهاز لم يسلّم موقعًا — تأكد من تشغيل خدمة الموقع في النظام";
+    } else if (window.LASTERR === 3) {
+      n.textContent = "انتهت المهلة — أعد المحاولة";
     }
+  }, 250);
+
+  el.addEventListener("location", e => {
+    if (e.target.position) render(e.target.position.coords);
   });
+
+  rt.onclick = () => {
+    window.LASTERR = null; window.FIX = null;
+    n.textContent = "جارٍ التحديد…";
+    window.geoStart();
+    if (el && el.click) el.click();
+  };
+
+  addEventListener("pageshow", () => window.geoStart());
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && !shown) window.geoStart();
+  });
+
+  cp.onclick = async () => {
+    if (!shown) return;
+    const v = f(shown.latitude) + ", " + f(shown.longitude);
+    try { await navigator.clipboard.writeText(v); }
+    catch { const x = document.createElement("textarea"); x.value = v;
+            document.body.append(x); x.select(); document.execCommand("copy"); x.remove(); }
+    cp.textContent = "تم"; setTimeout(() => cp.textContent = "نسخ", 1200);
+  };
+})();
 </script>
 </body>
 </html>

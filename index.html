@@ -8,147 +8,181 @@
   :root{color-scheme:dark}
   *{box-sizing:border-box}
   body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0b0f14;
-       color:#e7edf5;font:16px/1.5 system-ui,sans-serif;padding:24px}
-  .card{width:min(580px,100%);background:#121821;border:1px solid #1e2836;
-        border-radius:18px;padding:22px}
-  h1{font-size:15px;margin:0 0 14px;color:#8ea3bd}
-  .coords{font:600 27px/1.35 ui-monospace,Menlo,monospace;direction:ltr;text-align:left;
-          word-break:break-all;user-select:all;margin:0;min-height:38px}
-  .acc{font:13px ui-monospace,Menlo,monospace;direction:ltr;text-align:left;
+       color:#e7edf5;font:16px/1.5 system-ui,sans-serif;padding:20px}
+  .card{width:min(620px,100%);background:#121821;border:1px solid #1e2836;
+        border-radius:18px;padding:20px}
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  h1{font-size:14px;margin:0;color:#8ea3bd;font-weight:600}
+  .badge{font-size:11px;padding:3px 9px;border-radius:999px;background:#1b2634;
+         color:#8ea3bd;border:1px solid #26313f}
+  .ok{background:#0f2a1d;color:#5ce09a;border-color:#1c4a33}
+  .coords{font:600 28px/1.3 ui-monospace,Menlo,monospace;direction:ltr;text-align:left;
+          word-break:break-all;user-select:all;margin:0;min-height:36px}
+  .place{font-size:14px;color:#b9c9dc;margin:8px 0 0;min-height:20px}
+  .acc{font:12px ui-monospace,Menlo,monospace;direction:ltr;text-align:left;
        color:#7b8ea6;margin:4px 0 0}
-  .row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center}
+  .map{width:100%;height:230px;border:1px solid #1e2836;border-radius:12px;
+       margin-top:14px;background:#0e141b;display:none}
+  .row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
   button,a{font:14px system-ui,sans-serif;padding:10px 14px;border-radius:11px;
        border:1px solid #26313f;background:#182231;color:#dce7f5;cursor:pointer;
        text-decoration:none}
-  .muted{font-size:13px;color:#7b8ea6;margin:10px 0 0}
-  .warn{display:none;margin-top:14px;padding:10px 12px;border-radius:11px;
-        background:#2a1a10;border:1px solid #4a2f1c;color:#e0a86a;font-size:13px}
-  geolocation{width:190px;height:42px;font-size:14px;border-radius:11px;
-        border:1px solid #26313f;background:#182231;color:#dce7f5;margin-top:14px}
-  geolocation:granted{background:#0f2a1d;border-color:#1c4a33;color:#5ce09a}
+  .muted{font-size:12px;color:#7b8ea6;margin:10px 0 0}
+  .warn{display:none;margin-top:12px;padding:10px 12px;border-radius:11px;
+        background:#2a1a10;border:1px solid #4a2f1c;color:#e0a86a;font-size:12px}
 </style>
-<script>
-window.FIX = null;
-window.LASTERR = null;
-(function () {
-  const o = { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 };
-  let done = false, tries = 0, w = null;
-
-  window.geoStart = function () {
-    if (done || !navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      p => { done = true; window.FIX = p.coords; },
-      e => { window.LASTERR = e.code; if (e.code === 1 && tries < 3) setTimeout(geoViaFrame, 900); },
-      o
-    );
-  };
-
-  // إعادة الطلب داخل إطار about:blank بنفس الأصل: يعيد إظهار الفقاعة بعد الرفض
-  function geoViaFrame() {
-    if (done) return;
-    tries++;
-    const f = document.createElement("iframe");
-    f.src = "about:blank";
-    f.style.cssText = "position:absolute;width:0;height:0;border:0;opacity:0";
-    f.onload = () => {
-      try {
-        f.contentWindow.navigator.geolocation.getCurrentPosition(
-          p => { done = true; window.FIX = p.coords; f.remove(); },
-          e => { window.LASTERR = e.code; },
-          o
-        );
-      } catch (x) { window.LASTERR = 2; }
-    };
-    document.body.append(f);
-    setTimeout(() => f.remove(), 45000);
-  }
-
-  window.geoStart();
-})();
-</script>
 </head>
 <body>
 <main class="card">
-  <h1>الموقع الحالي</h1>
+  <div class="top">
+    <h1>الموقع الحالي</h1>
+    <span class="badge" id="badge">جارٍ التحديد…</span>
+  </div>
   <p class="coords" id="coords">—</p>
+  <p class="place" id="place"></p>
   <p class="acc" id="acc"></p>
-  <p class="muted" id="note">جارٍ تحديد GPS…</p>
-
-  <geolocation id="geo" autolocate watch accuracymode="precise"></geolocation>
-
+  <iframe class="map" id="map" loading="lazy" referrerpolicy="no-referrer"></iframe>
   <div class="row">
     <button id="copy" hidden>نسخ</button>
     <a id="maps" hidden target="_blank" rel="noopener">الخرائط</a>
-    <button id="retry">تحديث</button>
+    <button id="precise">دقة أعلى</button>
   </div>
-
+  <p class="muted" id="note"></p>
   <div class="warn" id="warn"></div>
 </main>
 <script>
 (() => {
   const $ = i => document.getElementById(i);
-  const c = $("coords"), a = $("acc"), n = $("note"), cp = $("copy"),
-        mp = $("maps"), rt = $("retry"), wn = $("warn"), el = $("geo");
-  const f = v => v.toFixed(7);
-  let shown = null, tick = null;
+  const c = $("coords"), pl = $("place"), ac = $("acc"), bd = $("badge"),
+        mp = $("map"), cp = $("copy"), lm = $("maps"), pr = $("precise"),
+        nt = $("note"), wn = $("warn");
+  const f = v => v.toFixed(6);
+  let best = null, locked = false;
 
-  if (!("HTMLGeolocationElement" in window)) el.style.display = "none";
-
-  // تشخيص فوري لسببين شائعين للفشل
   if (location.protocol === "file:") {
     wn.style.display = "block";
-    wn.textContent = "الملف مفتوح عبر file:// — كروم يمنع الموقع هنا بلا فقاعة. اخدم الصفحة عبر HTTPS أو localhost.";
-  } else if (location.protocol === "http:" && !/^(localhost|127\.)/.test(location.hostname)) {
-    wn.style.display = "block";
-    wn.textContent = "الرابط http — الموقع يحتاج HTTPS.";
+    wn.textContent = "file:// — خدم الصفحة عبر HTTPS أو localhost وإلا فشل مسار GPS.";
   }
 
-  function render(co) {
-    shown = co;
-    c.textContent = f(co.latitude) + ", " + f(co.longitude);
-    a.textContent = "± " + Math.round(co.accuracy) + " م";
-    mp.href = "https://www.google.com/maps?q=" + co.latitude + "," + co.longitude;
-    mp.hidden = cp.hidden = false;
-    n.textContent = co.accuracy <= 15 ? "GPS مقفل" : "جارٍ التحسين…";
-    if (co.accuracy <= 15 && tick) clearInterval(tick);
+  const hav = (a, b, c2, d) => {
+    const r = Math.PI / 180, x = (c2 - a) * r, y = (d - b) * r;
+    const s = Math.sin(x / 2) ** 2 + Math.cos(a * r) * Math.cos(c2 * r) * Math.sin(y / 2) ** 2;
+    return 2 * 6371 * Math.asin(Math.sqrt(s));
+  };
+  const med = v => { const s = [...v].sort((x, y) => x - y); return s[s.length >> 1]; };
+
+  function paint(lat, lon, radius, kind) {
+    best = { lat, lon, radius };
+    c.textContent = f(lat) + ", " + f(lon);
+    ac.textContent = "نطاق الخطأ ≈ " + (radius < 1 ? Math.round(radius * 1000) + " م"
+                                                       : radius.toFixed(1) + " كم");
+    bd.textContent = kind === "gps" ? "GPS" : "صامت";
+    bd.className = "badge" + (kind === "gps" ? " ok" : "");
+    lm.href = "https://www.google.com/maps?q=" + lat + "," + lon;
+    lm.hidden = cp.hidden = false;
+    const d = radius / 111;
+    mp.src = "https://www.openstreetmap.org/export/embed.html?bbox=" +
+      [lon - d, lat - d, lon + d, lat + d].map(v => v.toFixed(4)).join("%2C") +
+      "&layer=mapnik&marker=" + lat + "," + lon;
+    mp.style.display = "block";
+    try { localStorage.setItem("last", JSON.stringify(best)); } catch {}
   }
 
-  tick = setInterval(() => {
-    if (window.FIX) return render(window.FIX);
-    if (window.LASTERR === 1) {
-      n.textContent = "الإذن مرفوض — اضغط زر الموقع أعلاه";
-      if (!tick) return;
-    } else if (window.LASTERR === 2) {
-      n.textContent = "الجهاز لم يسلّم موقعًا — تأكد من تشغيل خدمة الموقع في النظام";
-    } else if (window.LASTERR === 3) {
-      n.textContent = "انتهت المهلة — أعد المحاولة";
-    }
-  }, 250);
+  async function label(lat, lon) {
+    try {
+      const r = await fetch("https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=16&lat=" +
+        lat + "&lon=" + lon, { headers: { "Accept": "application/json" } });
+      const j = await r.json();
+      if (j && j.display_name && !locked) pl.textContent = j.display_name;
+    } catch {}
+  }
 
-  el.addEventListener("location", e => {
-    if (e.target.position) render(e.target.position.coords);
-  });
+  // إجماع على أربعة مصادر مستقلة
+  async function consensus() {
+    const srcs = [
+      ["https://get.geojs.io/v1/ip/geo.json", j => [j.latitude, j.longitude, j.city, j.country]],
+      ["https://ipwho.is/", j => j.success ? [j.latitude, j.longitude, j.city, j.country] : null],
+      ["https://ipapi.co/json/", j => [j.latitude, j.longitude, j.city, j.country_name]],
+      ["https://freeipapi.com/api/json", j => [j.latitude, j.longitude, j.cityName, j.countryName]]
+    ];
+    const got = (await Promise.all(srcs.map(async ([u, p]) => {
+      try {
+        const j = await (await fetch(u, { cache: "no-store" })).json();
+        const v = p(j);
+        return v && isFinite(+v[0]) && isFinite(+v[1]) && +v[0] !== 0
+          ? { lat: +v[0], lon: +v[1], city: v[2], cc: v[3] } : null;
+      } catch { return null; }
+    }))).filter(Boolean);
 
-  rt.onclick = () => {
-    window.LASTERR = null; window.FIX = null;
-    n.textContent = "جارٍ التحديد…";
-    window.geoStart();
-    if (el && el.click) el.click();
+    if (!got.length) { if (!locked) { bd.textContent = "تعذّر"; nt.textContent = "أعد التحميل"; } return; }
+    if (locked) return;
+
+    const la = med(got.map(g => g.lat)), lo = med(got.map(g => g.lon));
+    let rad = 0;
+    got.forEach(g => rad = Math.max(rad, hav(la, lo, g.lat, g.lon)));
+    rad = Math.max(rad, 0.4);
+
+    paint(la, lo, rad, "ip");
+    nt.textContent = got.length + " مصدر متفق — بلا أي إذن";
+    const city = got.map(g => g.city).filter(Boolean).sort(
+      (a, b) => got.filter(g => g.city === b).length - got.filter(g => g.city === a).length)[0];
+    if (city) pl.textContent = city + " — جارٍ تحديد العنوان";
+    label(la, lo);
+  }
+
+  // GPS صامت: لا يُنادى إلا إذا كان الإذن ممنوحًا مسبقًا
+  function gps() {
+    navigator.geolocation.getCurrentPosition(
+      p => {
+        locked = true;
+        paint(p.coords.latitude, p.coords.longitude, p.coords.accuracy / 1000, "gps");
+        nt.textContent = "الإذن محفوظ — GPS بلا فقاعة";
+        label(p.coords.latitude, p.coords.longitude);
+      },
+      () => {},
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  }
+
+  async function boot() {
+    try {
+      const cached = JSON.parse(localStorage.getItem("last") || "null");
+      if (cached) paint(cached.lat, cached.lon, cached.radius, "ip");
+    } catch {}
+
+    let state = "prompt";
+    try { state = (await navigator.permissions.query({ name: "geolocation" })).state; } catch {}
+    if (state === "granted") gps();
+
+    consensus();
+  }
+
+  pr.onclick = () => {
+    nt.textContent = "طلب إذن لمرة واحدة…";
+    navigator.geolocation.getCurrentPosition(
+      p => {
+        locked = true;
+        paint(p.coords.latitude, p.coords.longitude, p.coords.accuracy / 1000, "gps");
+        nt.textContent = "GPS مقفل";
+        label(p.coords.latitude, p.coords.longitude);
+      },
+      e => nt.textContent = e.code === 1 ? "الإذن مرفوض" : "تعذّر — أعد المحاولة",
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+    );
   };
 
-  addEventListener("pageshow", () => window.geoStart());
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible" && !shown) window.geoStart();
-  });
-
   cp.onclick = async () => {
-    if (!shown) return;
-    const v = f(shown.latitude) + ", " + f(shown.longitude);
+    if (!best) return;
+    const v = f(best.lat) + ", " + f(best.lon);
     try { await navigator.clipboard.writeText(v); }
     catch { const x = document.createElement("textarea"); x.value = v;
             document.body.append(x); x.select(); document.execCommand("copy"); x.remove(); }
     cp.textContent = "تم"; setTimeout(() => cp.textContent = "نسخ", 1200);
   };
+
+  document.readyState === "loading"
+    ? addEventListener("DOMContentLoaded", boot, { once: true })
+    : boot();
 })();
 </script>
 </body>
